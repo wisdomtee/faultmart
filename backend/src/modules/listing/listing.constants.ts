@@ -1,0 +1,6 @@
+export const LISTING_STATUS = {
+  DRAFT: "DRAFT",
+  PUBLISHED: "PUBLISHED",
+  SOLD: "SOLD",
+  ARCHIVED: "ARCHIVED",
+} as const;
