@@ -11,6 +11,7 @@ import { AppError } from "../../utils/AppError";
 import {
   CreateListingDto,
   UpdateListingDto,
+  ListingQueryDto,
 } from "./listing.types";
 
 import { uploadService } from "../upload/upload.service";
@@ -266,17 +267,138 @@ return {
   /**
    * Get All Listings
    */
-  async getListings(query: any) {
-    return prisma.listing.findMany({
-      where: {
-        deletedAt: null,
-        status: ListingStatus.ACTIVE,
+  /**
+ * Get All Listings (Search + Filters + Pagination)
+ */
+async getListings(query: ListingQueryDto) {
+  const page = Math.max(1, Number(query.page) || 1);
+  const limit = Math.min(
+  Math.max(1, Number(query.limit) || 20),
+  100
+);
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.ListingWhereInput = {
+    deletedAt: null,
+    status: ListingStatus.ACTIVE,
+  };
+
+  // Search
+  if (query.search) {
+    where.OR = [
+      {
+        title: {
+          contains: query.search,
+          mode: "insensitive",
+        },
       },
+      {
+        description: {
+          contains: query.search,
+          mode: "insensitive",
+        },
+      },
+    ];
+  }
+
+  // Category
+  if (query.categoryId) {
+    where.categoryId = query.categoryId;
+  }
+
+  // State
+  if (query.state) {
+    where.state = {
+      equals: query.state,
+      mode: "insensitive",
+    };
+  }
+
+  // City
+  if (query.city) {
+    where.city = {
+      equals: query.city,
+      mode: "insensitive",
+    };
+  }
+
+  // Condition
+  if (query.condition) {
+    where.condition = query.condition;
+  }
+
+  // Fault Severity
+  if (query.faultSeverity) {
+    where.faultSeverity = query.faultSeverity;
+  }
+
+  // Price
+  if (query.minPrice || query.maxPrice) {
+    where.price = {
+  ...(query.minPrice && {
+    gte: new Prisma.Decimal(query.minPrice),
+  }),
+  ...(query.maxPrice && {
+    lte: new Prisma.Decimal(query.maxPrice),
+  }),
+};
+
+    if (query.minPrice) {
+      where.price.gte = new Prisma.Decimal(query.minPrice);
+    }
+
+    if (query.maxPrice) {
+      where.price.lte = new Prisma.Decimal(query.maxPrice);
+    }
+  }
+
+  // Sorting
+  let orderBy: Prisma.ListingOrderByWithRelationInput = {
+    createdAt: "desc",
+  };
+
+  switch (query.sort) {
+    case "oldest":
+      orderBy = {
+        createdAt: "asc",
+      };
+      break;
+
+    case "price_asc":
+      orderBy = {
+        price: "asc",
+      };
+      break;
+
+    case "price_desc":
+      orderBy = {
+        price: "desc",
+      };
+      break;
+
+    case "most_viewed":
+      orderBy = {
+        views: "desc",
+      };
+      break;
+  }
+
+  const [items, total] = await prisma.$transaction([
+    prisma.listing.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
 
       include: {
         category: true,
 
-        images: true,
+        images: {
+          take: 1,
+          orderBy: {
+            position: "asc",
+          },
+        },
 
         seller: {
           select: {
@@ -285,15 +407,35 @@ return {
             lastName: true,
             username: true,
             profileImage: true,
+            verificationStatus: true,
           },
         },
       },
+    }),
 
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  }
+    prisma.listing.count({
+      where,
+    }),
+  ]);
+
+  return {
+    items,
+
+    pagination: {
+      page,
+
+      limit,
+
+      total,
+
+      totalPages: Math.ceil(total / limit),
+
+      hasNext: page < Math.ceil(total / limit),
+
+      hasPrev: page > 1,
+    },
+  };
+}
 
   /**
    * Update Listing
