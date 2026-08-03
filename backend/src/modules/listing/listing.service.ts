@@ -136,10 +136,54 @@ async createListing(
 
   /**
    * Get Single Listing
-   */
-  /**
+   */ 
+
+  async getListing(id: string) {
+  const listing = await prisma.listing.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+    },
+
+    include: {
+      category: true,
+
+      seller: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          username: true,
+          profileImage: true,
+          verificationStatus: true,
+          createdAt: true,
+        },
+      },
+
+      images: {
+        orderBy: {
+          position: "asc",
+        },
+      },
+
+      videos: true,
+
+      vehicleDetail: true,
+
+      applianceDetail: true,
+    },
+  });
+
+  if (!listing) {
+    throw new AppError("Listing not found.", 404);
+  }
+
+  return listing;
+}
+
+/**
  * Get Listing By Slug
- */
+  */
 async getListingBySlug(slug: string) {
   const listing = await prisma.listing.findFirst({
     where: {
@@ -437,6 +481,29 @@ async getListings(query: ListingQueryDto) {
   };
 }
 
+async myListings(sellerId: string) {
+  return prisma.listing.findMany({
+    where: {
+      sellerId,
+      deletedAt: null,
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
+
+    include: {
+      category: true,
+
+      images: {
+        take: 1,
+        orderBy: {
+          position: "asc",
+        },
+      },
+    },
+  });
+}
   /**
    * Update Listing
    */

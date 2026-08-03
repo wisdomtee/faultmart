@@ -11,7 +11,7 @@ import { vehicleService } from "./vehicle.service";
 export const createVehicle = asyncHandler(async (req: Request, res: Response) => {
   const result = await vehicleService.createVehicle(
     req.user.userId,
-    req.params.listingId,
+    String(req.params.listingId),
     req.body
   );
 
@@ -28,7 +28,7 @@ export const createVehicle = asyncHandler(async (req: Request, res: Response) =>
  */
 export const getVehicle = asyncHandler(async (req: Request, res: Response) => {
   const result = await vehicleService.getVehicle(
-    req.params.listingId
+    String(req.params.listingId)
   );
 
   return successResponse(
@@ -44,7 +44,7 @@ export const getVehicle = asyncHandler(async (req: Request, res: Response) => {
 export const updateVehicle = asyncHandler(async (req: Request, res: Response) => {
   const result = await vehicleService.updateVehicle(
     req.user.userId,
-    req.params.listingId,
+    String(req.params.listingId),
     req.body
   );
 
@@ -61,7 +61,7 @@ export const updateVehicle = asyncHandler(async (req: Request, res: Response) =>
 export const deleteVehicle = asyncHandler(async (req: Request, res: Response) => {
   const result = await vehicleService.deleteVehicle(
     req.user.userId,
-    req.params.listingId
+    String(req.params.listingId)
   );
 
   return successResponse(

@@ -57,7 +57,7 @@ class OfferController {
   acceptOffer = asyncHandler(async (req: Request, res: Response) => {
     const result = await offerService.acceptOffer(
       req.user.userId,
-      req.params.id
+      String(req.params.id)
     );
 
     return successResponse(
@@ -73,7 +73,7 @@ class OfferController {
   rejectOffer = asyncHandler(async (req: Request, res: Response) => {
     const result = await offerService.rejectOffer(
       req.user.userId,
-      req.params.id
+      String(req.params.id)
     );
 
     return successResponse(
@@ -89,7 +89,7 @@ class OfferController {
   withdrawOffer = asyncHandler(async (req: Request, res: Response) => {
     const result = await offerService.withdrawOffer(
       req.user.userId,
-      req.params.id
+      String(req.params.id)
     );
 
     return successResponse(

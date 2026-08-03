@@ -16,22 +16,22 @@ import {
   JwtPayload,
 } from "../../utils/jwt";
 
-interface RegisterInput {
-    firstName: string;
-    lastName: string;
-    identifier: string;
-    password: string;
+interface RegisterDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  password: string;
 }
 
 interface LoginDto {
-  identifier: string;
+  email: string;
   password: string;
 }
 
 class AuthService {
   /**
-   * Hash refresh token before storing it in DB.
-   * Never store the raw refresh token.
+   * Hash refresh token before storing in DB
    */
   private hashRefreshToken(token: string): string {
     return crypto
@@ -41,21 +41,17 @@ class AuthService {
   }
 
   /**
-   * Create JWT access + refresh tokens.
+   * Create JWT tokens
    */
   private createTokens(payload: JwtPayload) {
-    const accessToken = generateAccessToken(payload);
-
-    const refreshToken = generateRefreshToken(payload);
-
     return {
-      accessToken,
-      refreshToken,
+      accessToken: generateAccessToken(payload),
+      refreshToken: generateRefreshToken(payload),
     };
   }
 
   /**
-   * Save refresh token to database.
+   * Save refresh token
    */
   private async saveRefreshToken(
     userId: string,
@@ -63,59 +59,51 @@ class AuthService {
     userAgent?: string,
     ipAddress?: string
   ) {
-    const tokenHash = this.hashRefreshToken(refreshToken);
-
     await prisma.refreshToken.create({
       data: {
         userId,
-        tokenHash,
-        userAgent,
-        ipAddress,
+        tokenHash: this.hashRefreshToken(refreshToken),
+        userAgent: userAgent ?? null,
+        ipAddress: ipAddress ?? null,
         expiresAt: new Date(
-          Date.now() +
-            30 * 24 * 60 * 60 * 1000
+          Date.now() + 30 * 24 * 60 * 60 * 1000
         ),
       },
     });
   }
 
   /**
-   * Remove a refresh token from the database.
+   * Remove refresh token
    */
-  private async revokeRefreshToken(refreshToken: string) {
-    const tokenHash = this.hashRefreshToken(refreshToken);
-
+  private async revokeRefreshToken(
+    refreshToken: string
+  ) {
     await prisma.refreshToken.deleteMany({
       where: {
-        tokenHash,
+        tokenHash:
+          this.hashRefreshToken(refreshToken),
       },
     });
   }
 
   /**
-   * Remove sensitive fields before returning a user.
+   * Remove password before returning user
    */
   private sanitizeUser(user: any) {
     const { password, ...safeUser } = user;
     return safeUser;
   }
 
-  // Registration
-  async register(
+  /**
+ * Register User
+ */
+async register(
   data: RegisterDto,
   userAgent?: string,
   ipAddress?: string
 ) {
-  const identifier = data.identifier?.trim();
+  const email = data.email.trim().toLowerCase();
 
-if (!identifier) {
-    throw new AppError("Email or phone is required.", 400);
-}
-
-const isEmail = identifier.includes("@");
-
-const email = isEmail ? identifier : null;
-const phone = !isEmail ? identifier : null;
   // Check email
   const existingEmail = await prisma.user.findUnique({
     where: {
@@ -124,110 +112,41 @@ const phone = !isEmail ? identifier : null;
   });
 
   if (existingEmail) {
-    throw new AppError("Email is already registered.", 409);
-  }
-
-  // Check phone
-  if (data.phone) {
-    const existingPhone = await prisma.user.findUnique({
-      where: {
-        phone: data.phone,
-      },
-    });
-
-    if (existingPhone) {
-      throw new AppError("Phone number is already registered.", 409);
-    }
-  }
-
-  const hashedPassword = await hashPassword(data.password);
-
-  const user = await prisma.$transaction(async (tx) => {
-    return tx.user.create({
-      data: {
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
-        email,
-        phone: data.phone,
-        password: hashedPassword,
-
-        role: Role.BUYER,
-
-        status: UserStatus.ACTIVE,
-      },
-    });
-  });
-
-  const payload: JwtPayload = {
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  };
-
-  const tokens = this.createTokens(payload);
-
-  await this.saveRefreshToken(
-    user.id,
-    tokens.refreshToken,
-    userAgent,
-    ipAddress
-  );
-
-  return {
-    user: this.sanitizeUser(user),
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
-  };
-}
-
-  // Login
- async register(
-  data: RegisterInput,
-  userAgent?: string,
-  ipAddress?: string
-) {
-  const identifier = data.identifier?.trim().toLowerCase();
-
-  if (!identifier) {
-    throw new AppError("Email or phone is required.", 400);
-  }
-
-  const isEmail = identifier.includes("@");
-
-  const email = isEmail ? identifier : null;
-  const phone = !isEmail ? identifier : null;
-
-
-  const existingUser = await prisma.user.findFirst({
-    where: {
-      OR: [
-        email ? { email } : undefined,
-        phone ? { phone } : undefined,
-      ].filter(Boolean) as Prisma.UserWhereInput[],
-    },
-  });
-
-
-  if (existingUser) {
     throw new AppError(
-      "Email or phone is already registered.",
+      "Email is already registered.",
       409
     );
   }
 
+  // Check phone (if supplied)
+  if (data.phone) {
+    const existingPhone =
+      await prisma.user.findUnique({
+        where: {
+          phone: data.phone,
+        },
+      });
 
-  const hashedPassword = await hashPassword(
-    data.password
-  );
+    if (existingPhone) {
+      throw new AppError(
+        "Phone number is already registered.",
+        409
+      );
+    }
+  }
 
+  const hashedPassword =
+    await hashPassword(data.password);
 
   const user = await prisma.user.create({
     data: {
       firstName: data.firstName.trim(),
+
       lastName: data.lastName.trim(),
 
       email,
-      phone,
+
+      phone: data.phone ?? null,
 
       password: hashedPassword,
 
@@ -237,16 +156,16 @@ const phone = !isEmail ? identifier : null;
     },
   });
 
-
   const payload: JwtPayload = {
     userId: user.id,
+
     email: user.email,
+
     role: user.role,
   };
 
-
-  const tokens = this.createTokens(payload);
-
+  const tokens =
+    this.createTokens(payload);
 
   await this.saveRefreshToken(
     user.id,
@@ -254,7 +173,6 @@ const phone = !isEmail ? identifier : null;
     userAgent,
     ipAddress
   );
-
 
   return {
     user: this.sanitizeUser(user),
@@ -265,49 +183,124 @@ const phone = !isEmail ? identifier : null;
   };
 }
 
-  // Refresh Token
-  async refresh(
+/**
+ * Login User
+ */
+async login(
+  data: LoginDto,
+  userAgent?: string,
+  ipAddress?: string
+) {
+  const email = data.email.trim().toLowerCase();
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (!user) {
+    throw new AppError("Invalid email or password.", 401);
+  }
+
+  const passwordMatches = await comparePassword(
+    data.password,
+    user.password
+  );
+
+  if (!passwordMatches) {
+    throw new AppError("Invalid email or password.", 401);
+  }
+
+  if (user.status !== UserStatus.ACTIVE) {
+    throw new AppError(
+      "Your account is not active.",
+      403
+    );
+  }
+
+  const payload: JwtPayload = {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  };
+
+  const tokens = this.createTokens(payload);
+
+  await this.saveRefreshToken(
+    user.id,
+    tokens.refreshToken,
+    userAgent,
+    ipAddress
+  );
+
+  return {
+    user: this.sanitizeUser(user),
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+  };
+}
+/**
+ * Refresh Access Token
+ */
+async refresh(
   refreshToken: string,
   userAgent?: string,
   ipAddress?: string
 ) {
   if (!refreshToken) {
-    throw new AppError("Refresh token is required.", 401);
+    throw new AppError(
+      "Refresh token is required.",
+      401
+    );
   }
 
-  // Verify JWT
   let payload: JwtPayload;
 
   try {
     payload = verifyRefreshToken(refreshToken);
   } catch {
-    throw new AppError("Invalid or expired refresh token.", 401);
+    throw new AppError(
+      "Invalid or expired refresh token.",
+      401
+    );
   }
 
-  const tokenHash = this.hashRefreshToken(refreshToken);
+  const tokenHash =
+    this.hashRefreshToken(refreshToken);
 
-  const storedToken = await prisma.refreshToken.findUnique({
-    where: {
-      tokenHash,
-    },
-    include: {
-      user: true,
-    },
-  });
+  const storedToken =
+    await prisma.refreshToken.findUnique({
+      where: {
+        tokenHash,
+      },
+      include: {
+        user: true,
+      },
+    });
 
   if (!storedToken) {
-    throw new AppError("Refresh token not found.", 401);
+    throw new AppError(
+      "Refresh token not found.",
+      401
+    );
   }
 
   if (storedToken.revokedAt) {
-    throw new AppError("Refresh token has been revoked.", 401);
+    throw new AppError(
+      "Refresh token has been revoked.",
+      401
+    );
   }
 
   if (storedToken.expiresAt < new Date()) {
-    throw new AppError("Refresh token has expired.", 401);
+    throw new AppError(
+      "Refresh token has expired.",
+      401
+    );
   }
 
-  // Rotate token
+  // Rotate refresh token
   await prisma.refreshToken.delete({
     where: {
       id: storedToken.id,
@@ -320,7 +313,8 @@ const phone = !isEmail ? identifier : null;
     role: storedToken.user.role,
   };
 
-  const tokens = this.createTokens(newPayload);
+  const tokens =
+    this.createTokens(newPayload);
 
   await this.saveRefreshToken(
     storedToken.user.id,
@@ -332,21 +326,27 @@ const phone = !isEmail ? identifier : null;
   return {
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
-    user: this.sanitizeUser(storedToken.user),
+    user: this.sanitizeUser(
+      storedToken.user
+    ),
   };
 }
 
-  // Logout
-  async logout(refreshToken: string) {
-  if (!refreshToken) {
-    return;
-  }
+/**
+ * Logout
+ */
+async logout(refreshToken: string) {
+  if (!refreshToken) return;
 
-  await this.revokeRefreshToken(refreshToken);
+  await this.revokeRefreshToken(
+    refreshToken
+  );
 }
 
-  // Current User
-  async getCurrentUser(userId: string) {
+/**
+ * Current User
+ */
+async getCurrentUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: {
       id: userId,
@@ -354,7 +354,10 @@ const phone = !isEmail ? identifier : null;
   });
 
   if (!user) {
-    throw new AppError("User not found.", 404);
+    throw new AppError(
+      "User not found.",
+      404
+    );
   }
 
   return this.sanitizeUser(user);

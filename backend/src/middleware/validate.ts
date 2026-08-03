@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { AnyZodObject, ZodError } from "zod";
+import { ZodTypeAny, ZodError } from "zod";
 
 export const validate =
-  (schema: AnyZodObject) =>
+  (schema: ZodTypeAny) =>
   (
     req: Request,
     res: Response,
@@ -17,7 +17,7 @@ export const validate =
         return res.status(400).json({
           success: false,
           message: "Validation failed.",
-          errors: error.errors,
+          errors: error.issues,
         });
       }
 

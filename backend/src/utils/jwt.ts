@@ -1,4 +1,5 @@
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
+import { Role } from "@prisma/client";
 
 const accessSecret: Secret = process.env.JWT_ACCESS_SECRET as Secret;
 const refreshSecret: Secret = process.env.JWT_REFRESH_SECRET as Secret;
@@ -15,19 +16,33 @@ const refreshExpiresIn =
 export interface JwtPayload {
   userId: string;
   email: string;
-  role: string;
+  role: Role;
 }
 
-export function generateAccessToken(payload: JwtPayload): string {
-  return jwt.sign(payload, accessSecret, {
-    expiresIn: accessExpiresIn,
-  });
+export function generateAccessToken(
+  payload: JwtPayload
+): string {
+  return jwt.sign(
+    payload,
+    accessSecret as string,
+    {
+      expiresIn:
+        accessExpiresIn ?? "15m",
+    }
+  );
 }
 
-export function generateRefreshToken(payload: JwtPayload): string {
-  return jwt.sign(payload, refreshSecret, {
-    expiresIn: refreshExpiresIn,
-  });
+export function generateRefreshToken(
+  payload: JwtPayload
+): string {
+  return jwt.sign(
+    payload,
+    refreshSecret as string,
+    {
+      expiresIn:
+        refreshExpiresIn ?? "30d",
+    }
+  );
 }
 
 export function verifyAccessToken(token: string): JwtPayload {

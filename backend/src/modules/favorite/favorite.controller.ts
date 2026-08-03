@@ -10,7 +10,7 @@ class FavoriteController {
   addFavorite = asyncHandler(async (req: Request, res: Response) => {
     const favorite = await favoriteService.addFavorite(
       req.user.userId,
-      req.params.listingId
+      String(req.params.listingId)
     );
 
     return successResponse(
@@ -27,7 +27,7 @@ class FavoriteController {
   removeFavorite = asyncHandler(async (req: Request, res: Response) => {
     const result = await favoriteService.removeFavorite(
       req.user.userId,
-      req.params.listingId
+      String(req.params.listingId)
     );
 
     return successResponse(
@@ -57,7 +57,7 @@ class FavoriteController {
    */
   getFavoriteCount = asyncHandler(async (req: Request, res: Response) => {
     const count = await favoriteService.getFavoriteCount(
-      req.params.listingId
+      String(req.params.listingId)
     );
 
     return successResponse(
@@ -73,7 +73,7 @@ class FavoriteController {
   isFavorited = asyncHandler(async (req: Request, res: Response) => {
     const result = await favoriteService.isFavorited(
       req.user.userId,
-      req.params.listingId
+      String(req.params.listingId)
     );
 
     return successResponse(

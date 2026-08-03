@@ -12,10 +12,10 @@ class ListingController {
     console.log("Seller ID:", req.user.userId);
 
     const listing = await listingService.createListing(
-  req.user.userId,
-  req.body,
-  req.files as Express.Multer.File[]
-);
+      req.user.userId,
+      req.body,
+      req.files as Express.Multer.File[]
+    );
 
     return successResponse(
       res,
@@ -28,23 +28,23 @@ class ListingController {
   /**
    * GET /api/listings
    */
-  getListings = asyncHandler(async (req: Request, res: Response) => {
-  const listings = await listingService.getListings(
-    req.query
-  );
+  getListings = asyncHandler(async (req: Request, res:Response) => {
+    const listings = await listingService.getListings(req.query);
 
-  return successResponse(
-    res,
-    listings,
-    "Listings retrieved successfully."
-  );
-});
+    return successResponse(
+      res,
+      listings,
+      "Listings retrieved successfully."
+    );
+  });
 
   /**
    * GET /api/listings/:id
    */
   getListingById = asyncHandler(async (req: Request, res: Response) => {
-    const listing = await listingService.getListing(req.params.id);
+    const listing = await listingService.getListing(
+      String(req.params.id)
+    );
 
     return successResponse(
       res,
@@ -54,22 +54,20 @@ class ListingController {
   });
 
   /**
- * GET /api/listings/:slug
- */
-getListingBySlug = asyncHandler(
-  async (req: Request, res: Response) => {
-    const listing =
-      await listingService.getListingBySlug(
-        req.params.slug
-      );
+   * GET /api/listings/slug/:slug
+   */
+  getListingBySlug = asyncHandler(async (req: Request, res: Response) => {
+    const listing = await listingService.getListingBySlug(
+      String(req.params.slug)
+    );
 
     return successResponse(
       res,
       listing,
       "Listing retrieved successfully."
     );
-  }
-);
+  });
+
   /**
    * GET /api/listings/me
    */
@@ -90,7 +88,7 @@ getListingBySlug = asyncHandler(
    */
   deleteListing = asyncHandler(async (req: Request, res: Response) => {
     await listingService.deleteListing(
-      req.params.id,
+       String(req.params.id),
       req.user.userId
     );
 
