@@ -11,6 +11,8 @@ import userRoutes from "./modules/user/user.routes";
 import listingRoutes from "./modules/listing/listing.routes";
 import uploadRoutes from "./modules/upload/upload.routes";
 import vehicleRoutes from "./modules/vehicle";
+import favoriteRoutes from "./modules/favorite/favorite.routes";
+import offerRoutes from "./modules/offer/offer.routes";
 
 const app = express();
 
@@ -32,6 +34,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/listings", listingRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/favorites", favoriteRoutes);
+app.use("/api/offers", offerRoutes);
 
 app.get("/", (_req, res) => {
   res.json({
