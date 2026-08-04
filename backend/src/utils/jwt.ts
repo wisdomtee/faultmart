@@ -4,8 +4,6 @@ import { Role } from "@prisma/client";
 const accessSecret: Secret = process.env.JWT_ACCESS_SECRET as Secret;
 const refreshSecret: Secret = process.env.JWT_REFRESH_SECRET as Secret;
 
-console.log("JWT_ACCESS_SECRET:", process.env.JWT_ACCESS_SECRET);
-console.log("JWT_REFRESH_SECRET:", process.env.JWT_REFRESH_SECRET);
 
 const accessExpiresIn =
   (process.env.ACCESS_TOKEN_EXPIRES || "15m") as SignOptions["expiresIn"];

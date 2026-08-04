@@ -1,8 +1,15 @@
 import { Response } from "express";
 
-export function successResponse(
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export function successResponse<T>(
   res: Response,
-  data?: unknown,
+  data?: T,
   message = "Success",
   status = 200
 ) {
@@ -13,9 +20,10 @@ export function successResponse(
   });
 }
 
-export function createdResponse(
+
+export function createdResponse<T>(
   res: Response,
-  data?: unknown,
+  data?: T,
   message = "Created successfully"
 ) {
   return res.status(201).json({
@@ -25,10 +33,11 @@ export function createdResponse(
   });
 }
 
-export function paginatedResponse(
+
+export function paginatedResponse<T>(
   res: Response,
-  data: unknown[],
-  pagination: unknown
+  data: T[],
+  pagination: Pagination
 ) {
   return res.status(200).json({
     success: true,

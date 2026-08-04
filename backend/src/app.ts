@@ -4,6 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
+import "./events/notification.listener";
+
 import healthRoutes from "./routes/health.routes";
 import authRoutes from "./modules/auth/auth.routes";
 import { errorHandler } from "./middleware/errorHandler";
@@ -13,6 +15,19 @@ import uploadRoutes from "./modules/upload/upload.routes";
 import vehicleRoutes from "./modules/vehicle";
 import favoriteRoutes from "./modules/favorite/favorite.routes";
 import offerRoutes from "./modules/offer/offer.routes";
+import conversationRoutes from "./modules/conversation/conversation.routes";
+import messageRoutes from "./modules/message/message.routes";
+import orderRoutes from "./modules/order/order.routes";
+import paymentRoutes from "./modules/payment/payment.routes";
+import deliveryRoutes from "./modules/delivery/delivery.routes";
+import reviewRoutes from "./modules/review/review.routes";
+import reportRoutes from "./modules/report/report.routes";
+import notificationRoutes from "./modules/notification/notification.routes";
+import { swaggerUi, swaggerSpec } from "./docs/swagger";
+import adminRoutes from "./modules/admin/admin.routes";
+import auditRoutes from "./modules/audit/audit.routes";
+import searchRoutes from "./modules/search/search.routes";
+import homeRoutes from "./modules/home/home.routes";
 
 const app = express();
 
@@ -36,6 +51,23 @@ app.use("/api/uploads", uploadRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/offers", offerRoutes);
+app.use("/api/conversations", conversationRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/deliveries", deliveryRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/notifications",notificationRoutes);
+app.use("/api/admin",adminRoutes);
+app.use("/api/audit",auditRoutes);
+app.use("/api/search", searchRoutes);
+app.use("/api/home", homeRoutes);
+
+app.use("/api/docs",swaggerUi.serve,swaggerUi.setup(swaggerSpec));
+
+
+
 
 app.get("/", (_req, res) => {
   res.json({

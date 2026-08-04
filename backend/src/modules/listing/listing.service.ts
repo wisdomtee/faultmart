@@ -22,22 +22,28 @@ class ListingService {
    * Generate a unique slug
    */
   private async generateSlug(title: string): Promise<string> {
-    let slug = slugify(title, {
-      lower: true,
-      strict: true,
-      trim: true,
-    });
+  const baseSlug = slugify(title, {
+    lower: true,
+    strict: true,
+    trim: true,
+  });
 
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
     const existing = await prisma.listing.findUnique({
       where: { slug },
     });
 
-    if (existing) {
-      slug = `${slug}-${Date.now()}`;
+    if (!existing) {
+      return slug;
     }
 
-    return slug;
+    counter++;
+    slug = `${baseSlug}-${counter}`;
   }
+}
 
   /**
    * Create Listing
@@ -50,135 +56,109 @@ async createListing(
   data: CreateListingDto,
   files: Express.Multer.File[] = []
 ) {
-  // Upload images to Cloudinary BEFORE starting the database transaction
-  const uploadedImages =
-    files.length > 0
-      ? await uploadService.uploadImages(files)
-      : [];
+  let uploadedImages: {
+    url: string;
+    publicId: string;
+  }[] = [];
 
-  return prisma.$transaction(async (tx) => {
-    // Check category exists
-    const category = await tx.category.findUnique({
-      where: {
-        id: data.categoryId,
-      },
-    });
+  try {
+    // Upload images first
+    uploadedImages =
+      files.length > 0
+        ? await uploadService.uploadImages(files)
+        : [];
 
-    if (!category) {
-      throw new AppError("Category not found.", 404);
-    }
-
-    // Generate unique slug
-    const slug = await this.generateSlug(data.title);
-
-    // Create listing
-    const listing = await tx.listing.create({
-      data: {
-        sellerId,
-
-        categoryId: data.categoryId,
-
-        title: data.title,
-
-        slug,
-
-        description: data.description,
-
-        price: new Prisma.Decimal(data.price),
-
-        currency: data.currency ?? Currency.NGN,
-
-        condition: data.condition,
-
-        faultSeverity: data.faultSeverity,
-
-        faultDescription: data.faultDescription,
-
-        location: data.location,
-
-        state: data.state,
-
-        city: data.city,
-
-        isNegotiable: data.negotiable ?? true,
-
-        status: ListingStatus.ACTIVE,
-
-        images: {
-          create: uploadedImages.map((image, index) => ({
-            url: image.url,
-            publicId: image.publicId,
-            position: index,
-          })),
+    // Create listing inside transaction
+    return await prisma.$transaction(async (tx) => {
+      const category = await tx.category.findUnique({
+        where: {
+          id: data.categoryId,
         },
-      },
+      });
 
-      include: {
-        category: true,
+      if (!category) {
+        throw new AppError("Category not found.", 404);
+      }
 
-        images: true,
+      const slug = await this.generateSlug(data.title);
 
-        seller: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            username: true,
-            profileImage: true,
+      const listing = await tx.listing.create({
+        data: {
+          sellerId,
+
+          categoryId: data.categoryId,
+
+          title: data.title,
+
+          slug,
+
+          description: data.description,
+
+          price: new Prisma.Decimal(data.price),
+
+          currency: data.currency ?? Currency.NGN,
+
+          condition: data.condition,
+
+          faultSeverity: data.faultSeverity,
+
+          faultDescription: data.faultDescription,
+
+          location: data.location,
+
+          state: data.state,
+
+          city: data.city,
+
+          isNegotiable: data.negotiable ?? true,
+
+          status: ListingStatus.ACTIVE,
+
+          images: {
+            create: uploadedImages.map((image, index) => ({
+              url: image.url,
+              publicId: image.publicId,
+              position: index,
+            })),
           },
         },
-      },
+
+        include: {
+          category: true,
+
+          images: true,
+
+          seller: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true,
+              profileImage: true,
+            },
+          },
+        },
+      });
+
+      return listing;
     });
+  } catch (error) {
+    // Roll back uploaded Cloudinary images
+    if (uploadedImages.length > 0) {
+      try {
+        await uploadService.deleteImages(
+          uploadedImages.map((image) => image.publicId)
+        );
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up uploaded images:",
+          cleanupError
+        );
+      }
+    }
 
-    return listing;
-  });
-}
-
-  /**
-   * Get Single Listing
-   */ 
-
-  async getListing(id: string) {
-  const listing = await prisma.listing.findFirst({
-    where: {
-      id,
-      deletedAt: null,
-    },
-
-    include: {
-      category: true,
-
-      seller: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          username: true,
-          profileImage: true,
-          verificationStatus: true,
-          createdAt: true,
-        },
-      },
-
-      images: {
-        orderBy: {
-          position: "asc",
-        },
-      },
-
-      videos: true,
-
-      vehicleDetail: true,
-
-      applianceDetail: true,
-    },
-  });
-
-  if (!listing) {
-    throw new AppError("Listing not found.", 404);
+    throw error;
   }
-
-  return listing;
 }
 
 /**
@@ -377,29 +357,21 @@ async getListings(query: ListingQueryDto) {
   }
 
   // Price
-  if (query.minPrice || query.maxPrice) {
-    where.price = {
-  ...(query.minPrice && {
-    gte: new Prisma.Decimal(query.minPrice),
-  }),
-  ...(query.maxPrice && {
-    lte: new Prisma.Decimal(query.maxPrice),
-  }),
-};
-
-    if (query.minPrice) {
-      where.price.gte = new Prisma.Decimal(query.minPrice);
-    }
-
-    if (query.maxPrice) {
-      where.price.lte = new Prisma.Decimal(query.maxPrice);
-    }
-  }
+if (query.minPrice || query.maxPrice) {
+  where.price = {
+    ...(query.minPrice && {
+      gte: new Prisma.Decimal(query.minPrice),
+    }),
+    ...(query.maxPrice && {
+      lte: new Prisma.Decimal(query.maxPrice),
+    }),
+  };
+}
 
   // Sorting
-  let orderBy: Prisma.ListingOrderByWithRelationInput = {
-    createdAt: "desc",
-  };
+let orderBy: Prisma.ListingOrderByWithRelationInput = {
+  createdAt: "desc",
+};
 
   switch (query.sort) {
     case "oldest":
@@ -513,10 +485,14 @@ async myListings(sellerId: string) {
     data: UpdateListingDto
   ) {
     const listing = await prisma.listing.findUnique({
-      where: {
-        id: listingId,
-      },
-    });
+  where: {
+    id: listingId,
+  },
+
+  include: {
+    images: true,
+  },
+});
 
     if (!listing || listing.deletedAt) {
       throw new AppError("Listing not found.", 404);
@@ -569,12 +545,24 @@ async myListings(sellerId: string) {
 
     return prisma.$transaction(async (tx) => {
       if (data.images) {
-        await tx.listingImage.deleteMany({
-          where: {
-            listingId,
-          },
-        });
-      }
+  // Delete old images from Cloudinary
+  const publicIds = listing.images
+    .map((image) => image.publicId)
+    .filter(
+      (publicId): publicId is string => Boolean(publicId)
+    );
+
+  if (publicIds.length > 0) {
+    await uploadService.deleteImages(publicIds);
+  }
+
+  // Delete old image records
+  await tx.listingImage.deleteMany({
+    where: {
+      listingId,
+    },
+  });
+}
 
       const updated = await tx.listing.update({
   where: {
@@ -650,41 +638,40 @@ async deleteListing(
     );
   }
 
-  return prisma.$transaction(async (tx) => {
-    // Delete images from Cloudinary
-    if (listing.images.length > 0) {
-      await uploadService.deleteImages(
-        listing.images
-          .map((image) => image.publicId)
-          .filter(
-            (publicId): publicId is string => Boolean(publicId)
-          )
-      );
-    }
+  // Delete images from Cloudinary BEFORE transaction
+  const publicIds = listing.images
+    .map((image) => image.publicId)
+    .filter(
+      (publicId): publicId is string => Boolean(publicId)
+    );
 
-    // Delete image records
-    await tx.listingImage.deleteMany({
-      where: {
-        listingId,
-      },
-    });
+  if (publicIds.length > 0) {
+    await uploadService.deleteImages(publicIds);
+  }
 
-    // Soft delete listing
-    await tx.listing.update({
-      where: {
-        id: listingId,
-      },
-
-      data: {
-        deletedAt: new Date(),
-      },
-    });
-
-    return {
-      message: "Listing deleted successfully.",
-    };
+  // Database transaction
+  await prisma.$transaction(async (tx) => {
+  await tx.listingImage.deleteMany({
+    where: {
+      listingId,
+    },
   });
+
+  await tx.listing.update({
+    where: {
+      id: listingId,
+    },
+    data: {
+      deletedAt: new Date(),
+    },
+  });
+});
+
+return {
+  message: "Listing deleted successfully.",
+};
 }
-} // <-- This closes the ListingService class
+
+}// <-- closes ListingService
 
 export const listingService = new ListingService();
