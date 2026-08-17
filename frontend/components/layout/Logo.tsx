@@ -1,28 +1,43 @@
 import Link from "next/link";
-import { Wrench } from "lucide-react";
+import Image from "next/image";
 
-export default function Logo() {
+interface LogoProps {
+  dark?: boolean;
+}
+
+export default function Logo({
+  dark = false,
+}: LogoProps) {
   return (
     <Link
       href="/"
       className="flex items-center gap-2"
+      aria-label="FaultMart"
     >
-
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-600 text-white shadow-lg">
-        <Wrench className="h-5 w-5" />
-      </div>
-
+      <Image
+        src="/images/branding/faultmart-logo.png"
+        alt="FaultMart"
+        width={46}
+        height={46}
+        className="h-11 w-11 object-contain"
+        priority
+      />
 
       <div className="text-2xl font-bold tracking-tight">
-        <span className="text-orange-600">
+        <span className="text-red-600">
           Fault
         </span>
 
-        <span className="text-neutral-900">
+        <span
+          className={
+            dark
+              ? "text-white"
+              : "text-neutral-900"
+          }
+        >
           Mart
         </span>
       </div>
-
     </Link>
   );
 }

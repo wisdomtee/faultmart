@@ -1,19 +1,18 @@
 export interface ListingImage {
   id: string;
   url: string;
+  publicId?: string | null;
+  position?: number;
 }
 
 export interface Seller {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email?: string;
   profileImage?: string | null;
-
-  phone?: string | null;
-
-  verificationStatus?: string;
-
-  createdAt: string;
+  rating?: number | null;
 }
 
 export interface Category {
@@ -23,83 +22,95 @@ export interface Category {
 }
 
 export interface VehicleDetail {
-  make?: string;
-  model?: string;
-  year?: number;
-  mileage?: number;
+  id?: string;
 
-  fuelType?: string;
-  transmission?: string;
-  bodyType?: string;
+  make?: string | null;
+  model?: string | null;
+  year?: number | null;
+  mileage?: number | null;
 
-  engineSize?: string;
-  color?: string;
+  fuelType?: string | null;
+  transmission?: string | null;
+  bodyType?: string | null;
+  engineSize?: string | null;
+  color?: string | null;
 
-  registrationYear?: number;
+  registrationYear?: number | null;
   accidentHistory?: boolean;
 
-  vin?: string;
-  driveType?: string;
+  doors?: number | null;
+  seats?: number | null;
+
+  driveType?: string | null;
+  owners?: number | null;
+  plateNumber?: string | null;
   registered?: boolean;
-
-  owners?: number;
-  doors?: number;
-  seats?: number;
-
-  plateNumber?: string;
+  vin?: string | null;
 }
 
 export interface ApplianceDetail {
-  brand?: string;
-  model?: string;
+  id?: string;
 
-  category?: string;
+  brand?: string | null;
+  model?: string | null;
+  category?: string | null;
 
-  condition?: string;
-
+  condition?: string | null;
   warranty?: boolean;
 
-  age?: number;
-
-  powerRating?: string;
+  age?: number | null;
+  powerRating?: string | null;
 }
 
 export interface Listing {
   id: string;
-
   title: string;
-
   slug: string;
 
-  description?: string;
+  description?: string | null;
 
   price: number;
-
   currency: string;
 
-  condition: string;
+  condition?: string | null;
+  faultSeverity?: string | null;
+  status?: string | null;
 
-  faultSeverity?: string;
+  featured?: boolean;
+  views?: number;
 
-  faultDescription?: string;
+  state?: string | null;
+  city?: string | null;
+  location?: string | null;
 
-  location?: string;
+  createdAt?: string;
+  updatedAt?: string;
 
-  state?: string;
-
-  city?: string;
-
-  views: number;
-
-  createdAt: string;
-
-  images: ListingImage[];
+  category: Category;
+  categoryId: string;
 
   seller: Seller;
 
-  category: Category;
+  images: ListingImage[];
 
-  vehicleDetail?: VehicleDetail;
+  vehicleDetail?: VehicleDetail | null;
+  applianceDetail?: ApplianceDetail | null;
 
-  applianceDetail?: ApplianceDetail;
+  _count?: {
+    favorites?: number;
+    offers?: number;
+    views?: number;
+  };
+}
+
+export interface ListingPagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+export interface ListingsResponse {
+  data: Listing[];
+  pagination: ListingPagination;
 }

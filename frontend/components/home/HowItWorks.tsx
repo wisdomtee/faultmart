@@ -12,25 +12,25 @@ import Container from "@/components/layout/Container";
 const steps = [
   {
     number: "01",
-    title: "Create Your Listing",
+    title: "List What You Have",
     description:
-      "Upload photos, set your price, and explain the fault clearly so buyers understand exactly what they are buying.",
+      "Upload clear photos, set your price, choose the condition, and explain exactly what works and what needs repair.",
     icon: FilePlus2,
   },
 
   {
     number: "02",
-    title: "Connect With Buyers",
+    title: "Connect & Negotiate",
     description:
-      "Answer questions, discuss repairs, negotiate offers, and communicate directly through FaultMart.",
+      "Buyers can ask questions, message sellers, discuss the condition and make offers based on the item's real value.",
     icon: MessagesSquare,
   },
 
   {
     number: "03",
-    title: "Complete The Deal",
+    title: "Make The Deal",
     description:
-      "Agree on the best offer, complete the transaction, and give your item a second life.",
+      "Agree on the right offer, complete the transaction and give a useful product a second life instead of throwing it away.",
     icon: Handshake,
   },
 ];
@@ -129,11 +129,11 @@ export default function HowItWorks() {
               "
             >
 
-              Buy And Sell
+              How FaultMart
 
-              <span className="text-orange-500">
-                {" "}With Confidence
-              </span>
+<span className="text-orange-500">
+  {" "}Works
+</span>
 
 
             </h2>
@@ -151,8 +151,8 @@ export default function HowItWorks() {
               "
             >
 
-              FaultMart makes trading repairable products
-              simple, transparent, and secure for everyone.
+              From listing a faulty product to finding the right buyer,
+              FaultMart keeps the process simple, transparent and direct.
 
             </p>
 
@@ -313,9 +313,29 @@ export default function HowItWorks() {
                     "
                   >
 
-                    Step {step.number}
+                    <div
+  className="
+    mt-8
+    flex
+    items-center
+    gap-2
+    text-sm
+    font-bold
+    text-orange-400
+  "
+>
+  Explore this step
 
-                    <ArrowRight className="h-4 w-4"/>
+  <ArrowRight
+    className="
+      h-4
+      w-4
+      transition-transform
+      duration-300
+      group-hover:translate-x-1
+    "
+  />
+</div>
 
                   </div>
 

@@ -154,8 +154,7 @@ export default function CTA() {
             >
 
 
-              <Link
-                href="/sell"
+              <Link href="/listings/create"
                 className="
                   inline-flex
                   items-center

@@ -6,6 +6,7 @@ import {
   Globe,
 } from "lucide-react";
 
+import BuiltByTechNerve from "@/components/branding/BuiltByTechNerve";
 import Container from "./Container";
 import Logo from "./Logo";
 
@@ -19,11 +20,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
 
-            <Logo />
+            <Logo dark />
 
             <p className="mt-6 max-w-md leading-7 text-neutral-400">
-              Africa's trusted marketplace for repairable
-              vehicles, phones, electronics and appliances.
+              Africa's trusted marketplace for new & repairable
+              vehicles, phones, electronics & appliances.
               Buy smarter, sell faster and trade with complete
               transparency.
             </p>
@@ -39,7 +40,7 @@ export default function Footer() {
 
               <div className="flex items-center gap-3 text-neutral-400">
                 <Phone className="h-5 w-5 text-orange-500" />
-                <span>+234 xxx xxx xxxx</span>
+                <span>+234 9045903069</span>
               </div>
 
               <div className="flex items-center gap-3 text-neutral-400">
@@ -227,18 +228,20 @@ export default function Footer() {
 
         {/* Bottom */}
 
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 py-8 text-sm text-neutral-500 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-5 border-t border-white/10 py-8 md:flex-row">
 
-          <p>
-            © {new Date().getFullYear()} FaultMart.
-            All rights reserved.
-          </p>
+  <p className="text-sm text-neutral-500">
+    © {new Date().getFullYear()} FaultMart.
+    All rights reserved.
+  </p>
 
-          <p>
-            Built with ❤️ in Nigeria.
-          </p>
+  <BuiltByTechNerve
+    width={110}
+    height={32}
+    className="h-7 w-auto object-contain"
+  />
 
-        </div>
+</div>
 
       </Container>
     </footer>

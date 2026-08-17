@@ -8,4 +8,22 @@ const api = axios.create({
   },
 });
 
+// Attach JWT automatically
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const auth = localStorage.getItem("faultmart-auth");
+
+    if (auth) {
+      const parsed = JSON.parse(auth);
+      const token = parsed?.state?.accessToken;
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+  }
+
+  return config;
+});
+
 export default api;

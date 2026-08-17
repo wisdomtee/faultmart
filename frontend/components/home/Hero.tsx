@@ -7,8 +7,6 @@ import {
   Car,
   Search,
   ShieldCheck,
-  Users,
-  MapPin,
   Wrench,
   Smartphone,
   Tv,
@@ -142,62 +140,79 @@ export default function Hero() {
 
 
             <h1
-              className="
-                mt-8
-                text-5xl
-                font-black
-                leading-tight
-                md:text-6xl
-                xl:text-7xl
-              "
-            >
+  className="
+    mt-8
+    text-5xl
+    font-black
+    leading-[1.05]
+    md:text-6xl
+    xl:text-7xl
+  "
+>
+  Buy & Sell
+  <br />
 
-              Buy &
+  <span className="text-orange-500">
+    Repairable
+  </span>
 
-              <span className="text-orange-500">
-                {" "}Sell
-              </span>
+  <br />
 
+  Products With
+  <br />
 
-              Repairable
-
-              <br />
-
-              Products With
-
-              <br />
-
-              Complete
-
-              <span className="text-orange-500">
-                {" "}Transparency
-              </span>
-
-            </h1>
+  Complete
+  <span className="text-orange-500">
+    {" "}Transparency
+  </span>
+</h1>
 
 
 
 
             <p
-              className="
-                mt-8
-                max-w-xl
-                text-lg
-                leading-8
-                text-neutral-300
-              "
-            >
+  className="
+    mt-8
+    max-w-xl
+    text-lg
+    leading-8
+    text-neutral-300
+  "
+>
+  FaultMart is Africa's marketplace for vehicles, phones,
+  electronics and appliances that need repair.
 
-              Discover faulty vehicles, phones, electronics and
-              appliances from trusted sellers across Nigeria.
+  <span className="mt-2 block">
+    See the fault. Understand the condition. Connect with the seller.
+    Make an offer and give useful products a second life.
+  </span>
+</p>
 
-              Every listing clearly explains what works,
-              what doesn't, and what needs repair.
+<div className="mt-8 grid max-w-xl gap-3 sm:grid-cols-2">
 
-            </p>
+  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+    <p className="text-sm font-bold text-white">
+      Looking to Buy?
+    </p>
 
+    <p className="mt-1 text-sm leading-6 text-neutral-400">
+      Find repairable products at prices that make sense
+      for your budget.
+    </p>
+  </div>
 
+  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+    <p className="text-sm font-bold text-white">
+      Have Something to Sell?
+    </p>
 
+    <p className="mt-1 text-sm leading-6 text-neutral-400">
+      Turn faulty or unwanted items into money instead
+      of letting them sit unused.
+    </p>
+  </div>
+
+</div>
 
             {/* SEARCH */}
 
@@ -364,19 +379,15 @@ export default function Hero() {
 
 
 
-              <Link href="/sell">
-
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="px-8"
-                >
-
-                  Sell an Item
-
-                </Button>
-
-              </Link>
+              <Link href="/login">
+  <Button
+    size="lg"
+    variant="secondary"
+    className="px-8"
+  >
+    Sell Your Item
+  </Button>
+</Link>
 
 
             </div>
@@ -589,13 +600,13 @@ export default function Hero() {
                   </div>
 
 
-                  <Button className="bg-orange-600 hover:bg-orange-700">
+                  <Link href="/listings">
+  <Button className="bg-orange-600 hover:bg-orange-700">
+    View Listings
 
-                    View Listing
-
-                    <ArrowRight className="ml-2 h-5 w-5"/>
-
-                  </Button>
+    <ArrowRight className="ml-2 h-5 w-5" />
+  </Button>
+</Link>
 
 
                 </div>

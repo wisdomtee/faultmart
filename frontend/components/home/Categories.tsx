@@ -220,72 +220,65 @@ export default function Categories({
 
           {/* HEADER */}
 
-          <div
-            className="
-              mx-auto
-              mb-16
-              max-w-3xl
-              text-center
-            "
-          >
+          {/* HEADER */}
 
-            <div
-              className="
-                mb-5
-                inline-flex
-                items-center
-                gap-2
-                rounded-full
-                bg-orange-100
-                px-5
-                py-2
-                text-sm
-                font-bold
-                text-orange-600
-              "
-            >
+<div
+  className="
+    mx-auto
+    mb-14
+    max-w-3xl
+    text-center
+  "
+>
+  <div
+    className="
+      mb-5
+      inline-flex
+      items-center
+      gap-2
+      rounded-full
+      bg-orange-100
+      px-5
+      py-2
+      text-sm
+      font-bold
+      text-orange-600
+    "
+  >
+    <Layers className="h-4 w-4" />
 
-              <Layers className="h-4 w-4"/>
+    Marketplace Categories
+  </div>
 
-              Marketplace Categories
+  <h2
+    className="
+      text-4xl
+      font-black
+      tracking-tight
+      text-neutral-900
+      md:text-5xl
+    "
+  >
+    Find What You Need.
+    <span className="text-orange-600">
+      {" "}Fix What You Find.
+    </span>
+  </h2>
 
-            </div>
-
-
-
-            <h2
-              className="
-                text-4xl
-                font-black
-                tracking-tight
-                text-neutral-900
-                md:text-5xl
-              "
-            >
-
-              Explore Repairable Products
-
-            </h2>
-
-
-
-            <p
-              className="
-                mt-5
-                text-lg
-                leading-8
-                text-neutral-600
-              "
-            >
-
-              Find faulty vehicles, electronics,
-              phones, appliances and more from
-              sellers across Nigeria.
-
-            </p>
-
-
-          </div>
+  <p
+    className="
+      mx-auto
+      mt-6
+      max-w-2xl
+      text-lg
+      leading-8
+      text-neutral-600
+    "
+  >
+    Explore repairable vehicles, phones, electronics,
+    appliances and more from sellers across Nigeria.
+  </p>
+</div>
 
 
 
@@ -295,159 +288,152 @@ export default function Categories({
           {/* CATEGORY GRID */}
 
           <div
+  className="
+    grid
+    gap-6
+    sm:grid-cols-2
+    lg:grid-cols-3
+    xl:grid-cols-4
+  "
+>
+<div className="mt-12 text-center">
+  <Link
+    href="/categories"
+    className="
+      inline-flex
+      items-center
+      gap-2
+      rounded-full
+      border
+      border-neutral-300
+      bg-white
+      px-7
+      py-3.5
+      font-bold
+      text-neutral-800
+      transition
+      hover:border-orange-500
+      hover:bg-orange-50
+      hover:text-orange-600
+    "
+  >
+    View All Categories
+
+    <ArrowRight className="h-4 w-4" />
+  </Link>
+</div>
+
+            {categories.map((category) => {
+  const Icon = getCategoryIcon(category);
+  const iconStyle = getIconStyle(category);
+
+  return (
+    <Link
+      key={category.id}
+      href={`/categories/${category.slug}`}
+      className="
+        group
+        relative
+        overflow-hidden
+        rounded-[28px]
+        border
+        border-neutral-200
+        bg-white
+        p-7
+        transition-all
+        duration-300
+        hover:-translate-y-2
+        hover:border-orange-300
+        hover:shadow-xl
+      "
+    >
+      {/* Background decoration */}
+      <div
+        className="
+          absolute
+          -right-10
+          -top-10
+          h-32
+          w-32
+          rounded-full
+          bg-orange-50
+          transition
+          duration-300
+          group-hover:scale-150
+        "
+      />
+
+      <div className="relative">
+        {/* Icon */}
+        <div
+          className={`
+            flex
+            h-16
+            w-16
+            items-center
+            justify-center
+            rounded-2xl
+            bg-gradient-to-br
+            ${iconStyle}
+            text-white
+            shadow-lg
+            transition
+            duration-300
+            group-hover:scale-110
+            group-hover:rotate-2
+          `}
+        >
+          <Icon className="h-8 w-8" />
+        </div>
+
+        {/* Category name */}
+        <h3
+          className="
+            mt-7
+            text-xl
+            font-black
+            text-neutral-900
+            transition
+            group-hover:text-orange-600
+          "
+        >
+          {category.name}
+        </h3>
+
+        {/* Listing count */}
+        <p className="mt-2 text-sm text-neutral-500">
+          {category.count}{" "}
+          {category.count === 1 ? "listing" : "listings"}
+        </p>
+
+        {/* Action */}
+        <div
+          className="
+            mt-6
+            flex
+            items-center
+            gap-2
+            text-sm
+            font-bold
+            text-orange-600
+          "
+        >
+          Explore category
+
+          <ArrowRight
             className="
-              grid
-              gap-6
-              sm:grid-cols-2
-              lg:grid-cols-4
+              h-4
+              w-4
+              transition-transform
+              duration-300
+              group-hover:translate-x-1
             "
-          >
-
-
-            {categories.map((category,index)=>{
-
-
-              const Icon =
-                getCategoryIcon(category);
-
-
-
-              return (
-
-                <Link
-                  key={category.id}
-                  href={`/categories/${category.slug}`}
-                  className="
-                    group
-                    relative
-                    overflow-hidden
-                    rounded-[32px]
-                    border
-                    border-neutral-200
-                    bg-white
-                    p-7
-                    shadow-sm
-                    transition-all
-                    duration-300
-                    hover:-translate-y-3
-                    hover:border-orange-300
-                    hover:shadow-2xl
-                  "
-                >
-
-
-                  <div
-                    className="
-                      absolute
-                      right-5
-                      top-5
-                      text-5xl
-                      font-black
-                      text-neutral-100
-                    "
-                  >
-                    {String(index+1).padStart(2,"0")}
-                  </div>
-
-
-
-
-
-                  <div
-                    className={`
-                      relative
-                      inline-flex
-                      rounded-2xl
-                      bg-gradient-to-br
-                      ${getIconStyle(category)}
-                      p-4
-                      text-white
-                      shadow-lg
-                      transition
-                      duration-300
-                      group-hover:scale-110
-                    `}
-                  >
-
-                    <Icon className="h-8 w-8"/>
-
-                  </div>
-
-
-
-
-
-                  <h3
-                    className="
-                      mt-8
-                      text-xl
-                      font-black
-                      text-neutral-900
-                      group-hover:text-orange-600
-                    "
-                  >
-                    {category.name}
-                  </h3>
-
-
-
-                  <p
-                    className="
-                      mt-2
-                      text-sm
-                      text-neutral-500
-                    "
-                  >
-
-                    {category.count}
-                    {" "}
-                    Listings Available
-
-                  </p>
-
-
-
-
-                  <div
-                    className="
-                      mt-7
-                      flex
-                      items-center
-                      justify-between
-                    "
-                  >
-
-                    <span
-                      className="
-                        font-semibold
-                        text-orange-600
-                      "
-                    >
-                      Explore
-                    </span>
-
-
-                    <ArrowRight
-                      className="
-                        h-5
-                        w-5
-                        text-orange-600
-                        transition
-                        group-hover:translate-x-2
-                      "
-                    />
-
-                  </div>
-
-
-                </Link>
-
-              );
-
-
-            })}
-
-
+          />
+        </div>
+      </div>
+    </Link>
+  );
+})}
 
 
 

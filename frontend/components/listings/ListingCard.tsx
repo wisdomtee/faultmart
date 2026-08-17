@@ -13,6 +13,8 @@ import ListingImage from "./ListingImage";
 import ListingPrice from "./ListingPrice";
 
 import { Listing } from "@/types/listing";
+import FaultSeverityBadge from "./FaultSeverityBadge";
+import { formatDistanceToNow } from "date-fns";
 
 interface Props {
   listing: Listing;
@@ -97,16 +99,25 @@ export default function ListingCard({
 
 
           <div
-            className="
-              absolute
-              left-4
-              top-4
-            "
-          >
-            <ListingBadge
-              condition={listing.condition}
-            />
-          </div>
+  className="
+    absolute
+    left-4
+    top-4
+    flex
+    flex-col
+    gap-2
+  "
+>
+
+  <ListingBadge
+  condition={listing.condition ?? "UNKNOWN"}
+/>
+
+  <FaultSeverityBadge
+    severity={listing.faultSeverity}
+  />
+
+</div>
 
 
 
@@ -175,52 +186,98 @@ export default function ListingCard({
 
 
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-2">
 
-            <span
-              className="
-                inline-flex
-                rounded-full
-                bg-orange-50
-                px-3
-                py-1
-                text-xs
-                font-bold
-                text-orange-700
-              "
-            >
-              {listing.category.name}
-            </span>
+  <span
+    className="
+      inline-flex
+      rounded-full
+      bg-orange-50
+      px-3
+      py-1
+      text-xs
+      font-bold
+      text-orange-700
+    "
+  >
+    {listing.category.name}
+  </span>
 
-          </div>
 
+  {listing.status && (
+    <span
+      className={`
+        inline-flex
+        rounded-full
+        px-3
+        py-1
+        text-xs
+        font-bold
+        ${
+          listing.status === "ACTIVE"
+            ? "bg-green-100 text-green-700"
+            : listing.status === "SOLD"
+            ? "bg-neutral-200 text-neutral-700"
+            : "bg-yellow-100 text-yellow-700"
+        }
+      `}
+    >
+      {listing.status.replace("_", " ")}
+    </span>
+  )}
+
+</div>
 
 
 
           <div
-            className="
-              mt-4
-              flex
-              items-center
-              gap-2
-              text-sm
-              text-neutral-500
-            "
-          >
+  className="
+    mt-4
+    space-y-2
+    text-sm
+    text-neutral-500
+  "
+>
 
-            <MapPin
-              className="
-                h-4
-                w-4
-                text-orange-500
-              "
-            />
+  <div
+    className="
+      flex
+      items-center
+      gap-2
+    "
+  >
+    <MapPin
+      className="
+        h-4
+        w-4
+        text-orange-500
+      "
+    />
 
-            <span className="truncate">
-              {location}
-            </span>
+    <span className="truncate">
+      {location}
+    </span>
 
-          </div>
+  </div>
+
+
+  <div
+    className="
+      text-xs
+      font-medium
+      text-neutral-400
+    "
+  >
+    🕒 Posted{" "}
+    {formatDistanceToNow(
+  new Date(listing.createdAt ?? Date.now()),
+  {
+    addSuffix: true,
+  }
+)}
+  </div>
+
+</div>
 
 
 

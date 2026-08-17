@@ -1,3 +1,4 @@
+import type React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Figtree } from "next/font/google";
 import "./globals.css";
@@ -26,7 +27,7 @@ description:
   "Africa's marketplace for repairable cars, appliances, and electronics.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"

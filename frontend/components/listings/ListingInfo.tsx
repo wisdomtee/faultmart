@@ -55,13 +55,13 @@ export default function ListingInfo({
         <div className="flex items-center gap-2">
           <CalendarDays className="h-5 w-5" />
           {new Date(
-            listing.createdAt
-          ).toLocaleDateString()}
+  listing.createdAt ?? Date.now()
+).toLocaleDateString()}
         </div>
 
         <ViewCounter
-          views={listing.views}
-        />
+  views={listing.views ?? 0}
+/>
 
       </div>
 

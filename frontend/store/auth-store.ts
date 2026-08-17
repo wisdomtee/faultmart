@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface User {
   id: string;
@@ -14,31 +15,35 @@ interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
 
-  setUser: (user: User | null) => void;
-  setAccessToken: (token: string | null) => void;
+  setAuth: (user: User, token: string) => void;
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  accessToken: null,
-  isAuthenticated: false,
-
-  setUser: (user) =>
-    set({
-      user,
-      isAuthenticated: !!user,
-    }),
-
-  setAccessToken: (token) =>
-    set({
-      accessToken: token,
-    }),
-
-  logout: () =>
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
       user: null,
       accessToken: null,
       isAuthenticated: false,
+
+      setAuth: (user, token) => {
+        set({
+          user,
+          accessToken: token,
+          isAuthenticated: true,
+        });
+      },
+
+      logout: () => {
+        set({
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
+        });
+      },
     }),
-}));
+    {
+      name: "faultmart-auth",
+    }
+  )
+);
