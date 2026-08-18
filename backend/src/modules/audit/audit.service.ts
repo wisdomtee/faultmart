@@ -1,4 +1,4 @@
-import prisma from "../../config/prisma";
+import { prisma } from "../../config/prisma";
 import { AuditAction } from "@prisma/client";
 
 
@@ -56,11 +56,12 @@ class AuditService {
         include:{
 
           user:{
-            select:{
-              id:true,
-              name:true,
-              email:true
-            }
+            select: {
+  id: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+}
           }
 
         },

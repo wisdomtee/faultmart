@@ -1,4 +1,8 @@
-import { PrismaClient, Prisma, MessageType } from "@prisma/client";
+import {
+  PrismaClient,
+  MessageType,
+} from "@prisma/client";
+
 import { AppError } from "../../utils/AppError";
 
 const prisma = new PrismaClient();
@@ -36,6 +40,7 @@ class MessageService {
         type: MessageType.TEXT,
         content: data.content,
       },
+
       include: {
         sender: {
           select: {
@@ -52,6 +57,7 @@ class MessageService {
       where: {
         id: data.conversationId,
       },
+
       data: {
         updatedAt: new Date(),
       },
@@ -64,8 +70,8 @@ class MessageService {
    * Get conversation messages
    */
   async getMessages(
-    conversationId: string,
-    userId: string
+    userId: string,
+    conversationId: string
   ) {
     const participant =
       await prisma.conversationParticipant.findFirst({
@@ -86,6 +92,7 @@ class MessageService {
       where: {
         conversationId,
       },
+
       include: {
         sender: {
           select: {
@@ -96,6 +103,7 @@ class MessageService {
           },
         },
       },
+
       orderBy: {
         createdAt: "asc",
       },
@@ -106,8 +114,8 @@ class MessageService {
    * Mark message as read
    */
   async markAsRead(
-    messageId: string,
-    userId: string
+    userId: string,
+    messageId: string
   ) {
     const message =
       await prisma.message.findUnique({
@@ -142,6 +150,7 @@ class MessageService {
       where: {
         id: messageId,
       },
+
       data: {
         isRead: true,
       },
@@ -152,8 +161,8 @@ class MessageService {
    * Delete own message
    */
   async deleteMessage(
-    messageId: string,
-    userId: string
+    userId: string,
+    messageId: string
   ) {
     const message =
       await prisma.message.findUnique({
@@ -188,4 +197,5 @@ class MessageService {
   }
 }
 
-export const messageService = new MessageService();
+export const messageService =
+  new MessageService();

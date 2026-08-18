@@ -17,11 +17,7 @@ class NotificationController {
       const userId = req.user!.userId;
 
       const notifications =
-        await notificationService.getNotifications(
-          userId,
-          req.query
-        );
-
+  await notificationService.getNotifications(userId);
       return successResponse(
         res,
         notifications,
@@ -40,7 +36,7 @@ class NotificationController {
       const notification =
         await notificationService.markAsRead(
           userId,
-          req.params.id
+          String(req.params.id)
         );
 
       return successResponse(
@@ -95,7 +91,7 @@ class NotificationController {
 
       await notificationService.deleteNotification(
         userId,
-        req.params.id
+        String(req.params.id)
       );
 
       return successResponse(

@@ -1,4 +1,4 @@
-import prisma from "../../config/prisma";
+import { prisma } from "../../config/prisma";
 import { NotificationType } from "@prisma/client";
 import { AppError } from "../../utils/AppError";
 

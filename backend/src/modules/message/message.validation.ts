@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 export const sendMessageSchema = z.object({
-  conversationId: z.string().uuid(),
-  content: z.string().min(1).max(5000),
+  content: z
+    .string()
+    .trim()
+    .min(1, "Message cannot be empty")
+    .max(5000, "Message is too long"),
 });

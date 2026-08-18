@@ -48,8 +48,8 @@ class DeliveryController {
 
       const delivery =
         await deliveryService.getDelivery(
-          req.params.orderId,
-          req.user.userId
+          String(req.params.orderId),
+          String(req.params.orderId)
         );
 
 
@@ -76,7 +76,7 @@ class DeliveryController {
 
       const delivery =
         await deliveryService.updateStatus(
-          req.params.id,
+          String(req.params.orderId),
           req.user.userId,
           req.body.status
         );

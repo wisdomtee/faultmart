@@ -4,7 +4,7 @@ import {
   AuditAction,
   UserStatus,
   ListingStatus,
-  ReportStatus
+  ReportStatus,
 } from "@prisma/client";
 
 import { asyncHandler } from "../../middleware/asyncHandler";
@@ -14,11 +14,13 @@ import adminService from "./admin.service";
 import auditService from "../audit/audit.service";
 
 class AdminController {
-
-
+  /**
+   * ============================================================
+   * ADMIN DASHBOARD
+   * ============================================================
+   */
   getDashboard = asyncHandler(
     async (_req: Request, res: Response) => {
-
       const dashboard =
         await adminService.getDashboard();
 
@@ -27,213 +29,233 @@ class AdminController {
         dashboard,
         "Dashboard statistics retrieved successfully."
       );
-
     }
   );
 
-
-
+  /**
+   * ============================================================
+   * GET USERS
+   * ============================================================
+   */
   getUsers = asyncHandler(
-  async (req: Request, res: Response) => {
-
-    const users =
-      await adminService.getUsers(
-        Number(req.query.page) || 1,
-        Number(req.query.limit) || 20,
-        req.query.search as string,
-        req.query.status as UserStatus
-      );
-
+    async (req: Request, res: Response) => {
+      const users =
+        await adminService.getUsers(
+          Number(req.query.page) || 1,
+          Number(req.query.limit) || 20,
+          typeof req.query.search === "string"
+            ? req.query.search
+            : undefined,
+          typeof req.query.status === "string"
+            ? (req.query.status as UserStatus)
+            : undefined
+        );
 
       return successResponse(
         res,
         users,
         "Users retrieved successfully."
       );
-
     }
   );
 
-
-
+  /**
+   * ============================================================
+   * UPDATE USER STATUS
+   * ============================================================
+   */
   updateUserStatus = asyncHandler(
     async (req: Request, res: Response) => {
+      const userId = req.params.id;
+
+      if (typeof userId !== "string") {
+        throw new Error("Invalid user ID.");
+      }
 
       const user =
         await adminService.updateUserStatus(
-          req.params.id,
-          req.body.status
+          userId,
+          req.body.status,
+          req.user!.userId
         );
-
 
       await auditService.createLog(
         req.user!.userId,
         AuditAction.UPDATE,
         "User",
-        req.params.id,
+        userId,
         "Admin updated user status",
         {
-          status: req.body.status
+          status: req.body.status,
         }
       );
-
 
       return successResponse(
         res,
         user,
         "User status updated successfully."
       );
-
     }
   );
 
-
-
+  /**
+   * ============================================================
+   * GET LISTINGS
+   * ============================================================
+   */
   getPendingListings = asyncHandler(
-async (req: Request, res: Response) => {
-
-const listings =
- await adminService.getListings(
-
-   Number(req.query.page) || 1,
-
-   Number(req.query.limit) || 20,
-
-   req.query.search as string,
-
-   req.query.status as ListingStatus
-
- );
+    async (req: Request, res: Response) => {
+      const listings =
+        await adminService.getListings(
+          Number(req.query.page) || 1,
+          Number(req.query.limit) || 20,
+          typeof req.query.search === "string"
+            ? req.query.search
+            : undefined,
+          typeof req.query.status === "string"
+            ? (req.query.status as ListingStatus)
+            : undefined
+        );
 
       return successResponse(
         res,
         listings,
         "Pending listings retrieved successfully."
       );
-
     }
   );
 
-
-
+  /**
+   * ============================================================
+   * APPROVE LISTING
+   * ============================================================
+   */
   approveListing = asyncHandler(
     async (req: Request, res: Response) => {
+      const listingId = req.params.id;
+
+      if (typeof listingId !== "string") {
+        throw new Error("Invalid listing ID.");
+      }
 
       const listing =
         await adminService.updateListingStatus(
-          req.params.id,
-          "ACTIVE"
+          listingId,
+          ListingStatus.ACTIVE
         );
-
 
       await auditService.createLog(
         req.user!.userId,
         AuditAction.APPROVE,
         "Listing",
-        req.params.id,
+        listingId,
         "Admin approved listing"
       );
-
 
       return successResponse(
         res,
         listing,
         "Listing approved successfully."
       );
-
     }
   );
 
-
-
+  /**
+   * ============================================================
+   * REJECT LISTING
+   * ============================================================
+   */
   rejectListing = asyncHandler(
     async (req: Request, res: Response) => {
+      const listingId = req.params.id;
+
+      if (typeof listingId !== "string") {
+        throw new Error("Invalid listing ID.");
+      }
 
       const listing =
         await adminService.updateListingStatus(
-          req.params.id,
-          "REJECTED"
+          listingId,
+          ListingStatus.REJECTED
         );
-
 
       await auditService.createLog(
         req.user!.userId,
         AuditAction.REJECT,
         "Listing",
-        req.params.id,
+        listingId,
         "Admin rejected listing"
       );
-
 
       return successResponse(
         res,
         listing,
         "Listing rejected successfully."
       );
-
     }
   );
 
-
-
+  /**
+   * ============================================================
+   * GET REPORTS
+   * ============================================================
+   */
   getReports = asyncHandler(
-async (req: Request, res: Response) => {
-
-const reports =
- await adminService.getReports(
-
-   Number(req.query.page) || 1,
-
-   Number(req.query.limit) || 20,
-
-   req.query.status as ReportStatus
-
- );
+    async (req: Request, res: Response) => {
+      const reports =
+        await adminService.getReports(
+          Number(req.query.page) || 1,
+          Number(req.query.limit) || 20,
+          typeof req.query.status === "string"
+            ? (req.query.status as ReportStatus)
+            : undefined
+        );
 
       return successResponse(
         res,
         reports,
         "Reports retrieved successfully."
       );
-
     }
   );
 
-
-
+  /**
+   * ============================================================
+   * UPDATE REPORT STATUS
+   * ============================================================
+   */
   updateReportStatus = asyncHandler(
     async (req: Request, res: Response) => {
+      const reportId = req.params.id;
+
+      if (typeof reportId !== "string") {
+        throw new Error("Invalid report ID.");
+      }
 
       const report =
         await adminService.updateReportStatus(
-          req.params.id,
+          reportId,
           req.body.status
         );
-
 
       await auditService.createLog(
         req.user!.userId,
         AuditAction.UPDATE,
         "Report",
-        req.params.id,
+        reportId,
         "Admin updated report status",
         {
-          status: req.body.status
+          status: req.body.status,
         }
       );
-
 
       return successResponse(
         res,
         report,
         "Report status updated successfully."
       );
-
     }
   );
-
-
 }
-
 
 export default new AdminController();

@@ -36,15 +36,12 @@ class ReviewService {
       );
     }
 
-    if (
-      order.status !== "DELIVERED" &&
-      order.status !== "COMPLETED"
-    ) {
-      throw new AppError(
-        "Order must be completed before leaving a review.",
-        400
-      );
-    }
+    if (order.status !== "DELIVERED") {
+  throw new AppError(
+    "Order must be completed before leaving a review.",
+    400
+  );
+}
 
     const existingReview =
       await prisma.review.findFirst({
@@ -63,8 +60,7 @@ class ReviewService {
 
     let revieweeId = "";
 
-    if (data.type === "SELLER") {
-
+    if (data.type === "BUYER_TO_SELLER") {
       if (order.buyerId !== reviewerId) {
         throw new AppError(
           "Only buyer can review seller.",

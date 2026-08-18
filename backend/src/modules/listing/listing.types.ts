@@ -49,6 +49,8 @@ export interface UpdateListingDto {
 
   description?: string;
 
+  categoryId?: string;
+
   price?: number;
 
   currency?: Currency;

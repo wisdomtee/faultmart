@@ -1,31 +1,37 @@
-import Joi from "joi";
+import { z } from "zod";
 
-export const createReviewSchema = Joi.object({
-  orderId: Joi.string().uuid().required(),
+export const createReviewSchema = z.object({
+  orderId: z
+    .string()
+    .uuid("Invalid order ID"),
 
-  rating: Joi.number()
-    .integer()
-    .min(1)
-    .max(5)
-    .required(),
+  rating: z
+    .number()
+    .int("Rating must be a whole number")
+    .min(1, "Rating must be at least 1")
+    .max(5, "Rating must not exceed 5"),
 
-  comment: Joi.string()
-    .max(1000)
-    .allow("")
-    .optional(),
+  comment: z
+    .string()
+    .max(1000, "Comment must not exceed 1000 characters")
+    .optional()
+    .or(z.literal("")),
 
-  type: Joi.string()
-    .valid("BUYER", "SELLER")
-    .required(),
+  type: z
+    .enum(["BUYER_TO_SELLER", "SELLER_TO_BUYER"]),
 });
 
-export const updateReviewSchema = Joi.object({
-  rating: Joi.number()
-    .integer()
-    .min(1)
-    .max(5),
+export const updateReviewSchema = z.object({
+  rating: z
+    .number()
+    .int("Rating must be a whole number")
+    .min(1, "Rating must be at least 1")
+    .max(5, "Rating must not exceed 5")
+    .optional(),
 
-  comment: Joi.string()
-    .max(1000)
-    .allow(""),
+  comment: z
+    .string()
+    .max(1000, "Comment must not exceed 1000 characters")
+    .optional()
+    .or(z.literal("")),
 });

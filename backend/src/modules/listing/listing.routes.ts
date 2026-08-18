@@ -28,14 +28,22 @@ const router = Router();
  *         name: limit
  *         schema:
  *           type: integer
- *           example: 10
+ *           example: 20
  *       - in: query
  *         name: search
  *         schema:
  *           type: string
  *           example: Toyota
  *       - in: query
- *         name: category
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: state
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: city
  *         schema:
  *           type: string
  *       - in: query
@@ -51,14 +59,44 @@ const router = Router();
  *         schema:
  *           type: string
  *       - in: query
- *         name: state
+ *         name: faultSeverity
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum:
+ *             - newest
+ *             - oldest
+ *             - price_asc
+ *             - price_desc
+ *             - most_viewed
  *     responses:
  *       200:
  *         description: Listings retrieved successfully
  */
 router.get("/", listingController.getListings);
+
+/**
+ * @swagger
+ * /api/listings/me:
+ *   get:
+ *     summary: Get current user's listings
+ *     tags: [Listings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User listings retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  "/me",
+  authenticate,
+  listingController.myListings
+);
 
 /**
  * @swagger
@@ -107,6 +145,13 @@ router.get("/", listingController.getListings);
  *                 type: string
  *               state:
  *                 type: string
+ *                 example: Lagos
+ *               city:
+ *                 type: string
+ *                 example: Ikeja
+ *               negotiable:
+ *                 type: boolean
+ *                 example: true
  *               images:
  *                 type: array
  *                 items:
@@ -123,50 +168,6 @@ router.post(
   authenticate,
   upload.array("images", 10),
   listingController.createListing
-);
-
-/**
- * @swagger
- * /api/listings/me:
- *   get:
- *     summary: Get current user's listings
- *     tags: [Listings]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: User listings retrieved successfully
- */
-router.get(
-  "/me",
-  authenticate,
-  listingController.myListings
-);
-
-/**
- * @swagger
- * /api/listings/{id}:
- *   delete:
- *     summary: Delete a listing
- *     tags: [Listings]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Listing deleted successfully
- *       404:
- *         description: Listing not found
- */
-router.delete(
-  "/:id",
-  authenticate,
-  listingController.deleteListing
 );
 
 /**
@@ -190,6 +191,67 @@ router.delete(
 router.get(
   "/id/:id",
   listingController.getListingById
+);
+
+/**
+ * @swagger
+ * /api/listings/{id}:
+ *   put:
+ *     summary: Update a listing
+ *     tags: [Listings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Listing updated successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Listing not found
+ */
+router.put(
+  "/:id",
+  authenticate,
+  upload.array("images", 10),
+  listingController.updateListing
+);
+
+/**
+ * @swagger
+ * /api/listings/{id}:
+ *   delete:
+ *     summary: Delete a listing
+ *     tags: [Listings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Listing deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Listing not found
+ */
+router.delete(
+  "/:id",
+  authenticate,
+  listingController.deleteListing
 );
 
 /**

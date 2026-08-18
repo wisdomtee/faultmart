@@ -7,6 +7,551 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                  String                    @id @default(uuid())
+  firstName           String
+  lastName            String
+  username            String?                   @unique
+  email               String                    @unique
+  phone               String?                   @unique
+  password            String
+  role                Role                      @default(BUYER)
+  status              UserStatus                @default(PENDING)
+  verificationStatus  VerificationStatus        @default(UNVERIFIED)
+  gender              Gender?
+  profileImage        String?
+  bio                 String?
+  isEmailVerified     Boolean                   @default(false)
+  isPhoneVerified     Boolean                   @default(false)
+  lastLoginAt         DateTime?
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  deletedAt           DateTime?
+  addresses           Address[]
+  advertisements      Advertisement[]
+  auditLogs           AuditLog[]
+  conversations       ConversationParticipant[]
+  favorites           Favorite[]
+  listings            Listing[]
+  listingViews        ListingView[]
+  sentMessages        Message[]                 @relation("SentMessages")
+  notifications       Notification[]
+  buyerOffers         Offer[]                   @relation("BuyerOffers")
+  sellerOffers        Offer[]                   @relation("SellerOffers")
+  buyerOrders         Order[]                   @relation("BuyerOrders")
+  sellerOrders        Order[]                   @relation("SellerOrders")
+  passwordResetTokens PasswordResetToken[]
+  payments            Payment[]
+  refreshTokens       RefreshToken[]
+  reportsReceived     Report[]                  @relation("ReportedUser")
+  reports             Report[]                  @relation("UserReports")
+  Report              Report[]
+  reviewsReceived     Review[]                  @relation("ReviewsReceived")
+  reviewsGiven        Review[]                  @relation("ReviewsGiven")
+  savedSearches       SavedSearch[]
+  verificationTokens  VerificationToken[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+  @@index([status])
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  userId      String
+  label       String?
+  fullName    String
+  phone       String
+  country     String   @default("Nigeria")
+  state       String
+  city        String
+  addressLine String
+  landmark    String?
+  latitude    Float?
+  longitude   Float?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Category {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  description String?
+  type        CategoryType
+  image       String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  icon        String?
+  isFeatured  Boolean      @default(false)
+  sortOrder   Int          @default(0)
+  listings    Listing[]
+
+  @@index([type])
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model Listing {
+  id               String           @id @default(uuid())
+  sellerId         String
+  categoryId       String
+  title            String
+  slug             String           @unique
+  description      String
+  price            Decimal          @db.Decimal(12, 2)
+  currency         Currency         @default(NGN)
+  condition        ListingCondition
+  faultSeverity    FaultSeverity?
+  faultDescription String?
+  status           ListingStatus    @default(DRAFT)
+  location         String?
+  state            String?
+  city             String?
+  views            Int              @default(0)
+  isNegotiable     Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  applianceDetail  ApplianceDetail?
+  conversations    Conversation[]
+  favorites        Favorite[]
+  category         Category         @relation(fields: [categoryId], references: [id])
+  seller           User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  images           ListingImage[]
+  videos           ListingVideo[]
+  viewsHistory     ListingView[]
+  offers           Offer[]
+  order            Order?
+  reports          Report[]
+  reviews          Review[]
+  savedSearches    SavedSearch[]
+  vehicleDetail    VehicleDetail?
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([sellerId])
+  @@index([city])
+  @@index([createdAt])
+}
+
+model ListingImage {
+  id        String   @id @default(uuid())
+  listingId String
+  url       String
+  publicId  String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model ListingVideo {
+  id        String   @id @default(uuid())
+  listingId String
+  url       String
+  publicId  String?
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model VehicleDetail {
+  id               String           @id @default(uuid())
+  listingId        String           @unique
+  make             String
+  model            String
+  year             Int?
+  mileage          Int?
+  fuelType         FuelType?
+  transmission     Transmission?
+  bodyType         VehicleBodyType?
+  engineSize       String?
+  color            String?
+  registrationYear Int?
+  accidentHistory  Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  doors            Int?
+  driveType        DriveType?
+  owners           Int?
+  plateNumber      String?
+  registered       Boolean          @default(true)
+  seats            Int?
+  updatedAt        DateTime         @updatedAt
+  vin              String?          @unique
+  listing          Listing          @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([make])
+  @@index([model])
+  @@index([year])
+  @@index([fuelType])
+  @@index([transmission])
+}
+
+model ApplianceDetail {
+  id          String             @id @default(uuid())
+  listingId   String             @unique
+  brand       String
+  model       String?
+  category    String?
+  condition   ApplianceCondition
+  warranty    Boolean            @default(false)
+  age         Int?
+  powerRating String?
+  listing     Listing            @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+}
+
+model ListingView {
+  id        String   @id @default(uuid())
+  userId    String?
+  listingId String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([listingId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model SavedSearch {
+  id         String   @id @default(uuid())
+  userId     String
+  listingId  String?
+  keyword    String?
+  categoryId String?
+  minPrice   Decimal? @db.Decimal(12, 2)
+  maxPrice   Decimal? @db.Decimal(12, 2)
+  location   String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  listing    Listing? @relation(fields: [listingId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([isActive])
+}
+
+model Conversation {
+  id           String                    @id @default(uuid())
+  type         ConversationType          @default(DIRECT)
+  listingId    String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  listing      Listing?                  @relation(fields: [listingId], references: [id])
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([listingId])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+}
+
+model Message {
+  id             String              @id @default(uuid())
+  conversationId String
+  senderId       String
+  type           MessageType         @default(TEXT)
+  content        String?
+  isRead         Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  conversation   Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User                @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  attachments    MessageAttachment[]
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model MessageAttachment {
+  id        String      @id @default(uuid())
+  messageId String
+  url       String
+  type      MessageType
+  createdAt DateTime    @default(now())
+  message   Message     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model Offer {
+  id        String      @id @default(uuid())
+  listingId String
+  buyerId   String
+  sellerId  String
+  amount    Decimal     @db.Decimal(12, 2)
+  status    OfferStatus @default(PENDING)
+  message   String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  buyer     User        @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
+  listing   Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  seller    User        @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
+  order     Order?
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  listingId       String      @unique
+  buyerId         String
+  sellerId        String
+  offerId         String?     @unique
+  amount          Decimal     @db.Decimal(12, 2)
+  currency        Currency    @default(NGN)
+  status          OrderStatus @default(PENDING)
+  shippingAddress String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  delivery        Delivery?
+  buyer           User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  listing         Listing     @relation(fields: [listingId], references: [id])
+  offer           Offer?      @relation(fields: [offerId], references: [id])
+  seller          User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  payment         Payment?
+  review          Review?
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  orderId   String        @unique
+  userId    String
+  method    PaymentMethod
+  status    PaymentStatus @default(PENDING)
+  reference String?       @unique
+  amount    Decimal       @db.Decimal(12, 2)
+  currency  Currency      @default(NGN)
+  paidAt    DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([reference])
+}
+
+model Delivery {
+  id           String         @id @default(uuid())
+  orderId      String         @unique
+  status       DeliveryStatus @default(PENDING)
+  courier      String?
+  trackingCode String?
+  pickupDate   DateTime?
+  deliveredAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  order        Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([trackingCode])
+}
+
+model Review {
+  id         String     @id @default(uuid())
+  orderId    String     @unique
+  reviewerId String
+  revieweeId String
+  type       ReviewType
+  rating     Int
+  comment    String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  listingId  String?
+  listing    Listing?   @relation(fields: [listingId], references: [id])
+  order      Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reviewee   User       @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+  reviewer   User       @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, reviewerId])
+  @@index([revieweeId])
+  @@index([rating])
+}
+
+model Report {
+  id             String       @id @default(uuid())
+  reporterId     String
+  listingId      String?
+  reportedUserId String?
+  reason         ReportReason
+  description    String?
+  status         ReportStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  userId         String?
+  listing        Listing?     @relation(fields: [listingId], references: [id])
+  reportedUser   User?        @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  reporter       User         @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  User           User?        @relation(fields: [userId], references: [id])
+
+  @@index([reporterId])
+  @@index([listingId])
+  @@index([status])
+}
+
+model Notification {
+  id            String           @id @default(uuid())
+  userId        String
+  type          NotificationType
+  title         String
+  message       String
+  isRead        Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  referenceId   String?
+  referenceType String?
+  updatedAt     DateTime         @updatedAt
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  userId      String?
+  action      AuditAction
+  entity      String
+  entityId    String?
+  description String?
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  user        User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+}
+
+model Banner {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String
+  linkUrl     String?
+  status      BannerStatus @default(ACTIVE)
+  position    Int          @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([status])
+  @@index([position])
+}
+
+model Advertisement {
+  id          String              @id @default(uuid())
+  userId      String?
+  title       String
+  description String?
+  imageUrl    String?
+  linkUrl     String?
+  status      AdvertisementStatus @default(DRAFT)
+  startDate   DateTime?
+  endDate     DateTime?
+  views       Int                 @default(0)
+  clicks      Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  user        User?               @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model SiteSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 enum Role {
   SUPER_ADMIN
   ADMIN
@@ -193,17 +738,11 @@ enum NotificationType {
   OFFER_RECEIVED
   OFFER_ACCEPTED
   OFFER_REJECTED
-
   NEW_MESSAGE
-
   PAYMENT_SUCCESSFUL
-
   ORDER_CONFIRMED
-
   DELIVERY_UPDATED
-
   NEW_REVIEW
-
   ADMIN_ACTION
 }
 
@@ -237,874 +776,4 @@ enum Currency {
   KES
   ZAR
   USD
-}
-
-model User {
-  id String @id @default(uuid())
-
-  firstName String
-  lastName  String
-
-  username String? @unique
-
-  email String  @unique
-  phone String? @unique
-
-  password String
-
-  role Role @default(BUYER)
-
-  status UserStatus @default(PENDING)
-
-  verificationStatus VerificationStatus @default(UNVERIFIED)
-
-  gender Gender?
-
-  profileImage String?
-
-  bio String?
-
-  isEmailVerified Boolean @default(false)
-  isPhoneVerified Boolean @default(false)
-
-  lastLoginAt DateTime?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // Authentication
-
-  verificationTokens VerificationToken[]
-
-  passwordResetTokens PasswordResetToken[]
-
-  refreshTokens RefreshToken[]
-
-  // Profile
-
-  addresses Address[]
-
-  // Marketplace
-
-  listings Listing[]
-
-  favorites Favorite[]
-
-  listingViews ListingView[]
-
-  savedSearches SavedSearch[]
-
-  // Communication
-
-  sentMessages Message[] @relation("SentMessages")
-
-  conversations ConversationParticipant[]
-
-  // Trading
-
-  buyerOffers Offer[] @relation("BuyerOffers")
-
-  sellerOffers Offer[] @relation("SellerOffers")
-
-  buyerOrders Order[] @relation("BuyerOrders")
-
-  sellerOrders Order[] @relation("SellerOrders")
-
-  payments Payment[]
-
-  // Reviews
-
-  reviewsGiven Review[] @relation("ReviewsGiven")
-
-  reviewsReceived Review[] @relation("ReviewsReceived")
-
-  // Reports
-
-  reports Report[] @relation("UserReports")
-
-  // Notifications
-
-  notifications Notification[]
-
-  // Admin
-
-  auditLogs AuditLog[]
-
-  Advertisement Advertisement[]
-  Report        Report[]
-
-  @@index([email])
-  @@index([phone])
-  @@index([role])
-  @@index([status])
-}
-
-model Address {
-  id String @id @default(uuid())
-
-  userId String
-
-  label String?
-
-  fullName String
-
-  phone String
-
-  country String @default("Nigeria")
-
-  state String
-
-  city String
-
-  addressLine String
-
-  landmark String?
-
-  latitude Float?
-
-  longitude Float?
-
-  isDefault Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model VerificationToken {
-  id String @id @default(uuid())
-
-  userId String
-
-  token String @unique
-
-  expiresAt DateTime
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
-}
-
-model PasswordResetToken {
-  id String @id @default(uuid())
-
-  userId String
-
-  token String @unique
-
-  expiresAt DateTime
-
-  used Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
-}
-
-model RefreshToken {
-  id String @id @default(uuid())
-
-  userId String
-
-  tokenHash String @unique
-
-  userAgent String?
-
-  ipAddress String?
-
-  expiresAt DateTime
-
-  revokedAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
-}
-
-model Category {
-  id          String       @id @default(uuid())
-  name        String
-  slug        String       @unique
-  description String?
-  type        CategoryType
-  image       String?
-  icon        String? // optional icon for UI
-  sortOrder   Int          @default(0)
-  isFeatured  Boolean      @default(false)
-  isActive    Boolean      @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  listings Listing[]
-
-  @@index([type])
-  @@index([isActive])
-  @@index([sortOrder])
-}
-
-model Listing {
-  id String @id @default(uuid())
-
-  sellerId String
-
-  categoryId String
-
-  title String
-
-  slug String @unique
-
-  description String
-
-  price Decimal @db.Decimal(12, 2)
-
-  currency Currency @default(NGN)
-
-  condition ListingCondition
-
-  faultSeverity FaultSeverity?
-
-  faultDescription String?
-
-  status ListingStatus @default(DRAFT)
-
-  location String?
-
-  state String?
-
-  city String?
-
-  views Int @default(0)
-
-  isNegotiable Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  deletedAt DateTime?
-
-  // Relations
-
-  seller User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-
-  category Category @relation(fields: [categoryId], references: [id])
-
-  images ListingImage[]
-
-  videos ListingVideo[]
-
-  vehicleDetail VehicleDetail?
-
-  applianceDetail ApplianceDetail?
-
-  favorites Favorite[]
-
-  viewsHistory ListingView[]
-
-  savedSearches SavedSearch[]
-
-  conversations Conversation[]
-
-  offers Offer[]
-
-  order Order?
-
-  reviews Review[]
-
-  reports Report[]
-
-  @@index([sellerId])
-  @@index([categoryId])
-  @@index([status])
-  @@index([city])
-  @@index([createdAt])
-}
-
-model ListingImage {
-  id String @id @default(uuid())
-
-  listingId String
-
-  url String
-
-  publicId String?
-
-  position Int @default(0)
-
-  createdAt DateTime @default(now())
-
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  @@index([listingId])
-}
-
-model ListingVideo {
-  id String @id @default(uuid())
-
-  listingId String
-
-  url String
-
-  publicId String?
-
-  createdAt DateTime @default(now())
-
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  @@index([listingId])
-}
-
-model VehicleDetail {
-  id String @id @default(uuid())
-
-  listingId String @unique
-
-  make String
-
-  model String
-
-  year Int?
-
-  mileage Int?
-
-  fuelType FuelType?
-
-  transmission Transmission?
-
-  bodyType VehicleBodyType?
-
-  engineSize String?
-
-  color String?
-
-  registrationYear Int?
-
-  accidentHistory Boolean @default(false)
-
-  // Recommended additions
-  vin         String?    @unique
-  driveType   DriveType?
-  registered  Boolean    @default(true)
-  owners      Int?
-  doors       Int?
-  seats       Int?
-  plateNumber String?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  @@index([make])
-  @@index([model])
-  @@index([year])
-  @@index([fuelType])
-  @@index([transmission])
-}
-
-model ApplianceDetail {
-  id String @id @default(uuid())
-
-  listingId String @unique
-
-  brand String
-
-  model String?
-
-  category String?
-
-  condition ApplianceCondition
-
-  warranty Boolean @default(false)
-
-  age Int?
-
-  powerRating String?
-
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-}
-
-model Favorite {
-  id String @id @default(uuid())
-
-  userId String
-
-  listingId String
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, listingId])
-  @@index([userId])
-  @@index([listingId])
-}
-
-model ListingView {
-  id String @id @default(uuid())
-
-  userId String?
-
-  listingId String
-
-  ipAddress String?
-
-  userAgent String?
-
-  createdAt DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  @@index([listingId])
-  @@index([userId])
-  @@index([createdAt])
-}
-
-model SavedSearch {
-  id String @id @default(uuid())
-
-  userId String
-
-  listingId String?
-
-  keyword String?
-
-  categoryId String?
-
-  minPrice Decimal? @db.Decimal(12, 2)
-
-  maxPrice Decimal? @db.Decimal(12, 2)
-
-  location String?
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  listing Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([categoryId])
-  @@index([isActive])
-}
-
-model Conversation {
-  id String @id @default(uuid())
-
-  type ConversationType @default(DIRECT)
-
-  listingId String?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  listing Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
-
-  participants ConversationParticipant[]
-
-  messages Message[]
-
-  @@index([listingId])
-}
-
-model ConversationParticipant {
-  id String @id @default(uuid())
-
-  conversationId String
-
-  userId String
-
-  joinedAt DateTime @default(now())
-
-  lastReadAt DateTime?
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([conversationId, userId])
-  @@index([conversationId])
-  @@index([userId])
-}
-
-model Message {
-  id String @id @default(uuid())
-
-  conversationId String
-
-  senderId String
-
-  type MessageType @default(TEXT)
-
-  content String?
-
-  isRead Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  sender User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-
-  attachments MessageAttachment[]
-
-  @@index([conversationId])
-  @@index([senderId])
-  @@index([createdAt])
-}
-
-model MessageAttachment {
-  id String @id @default(uuid())
-
-  messageId String
-
-  url String
-
-  type MessageType
-
-  createdAt DateTime @default(now())
-
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  @@index([messageId])
-}
-
-model Offer {
-  id String @id @default(uuid())
-
-  listingId String
-
-  buyerId String
-
-  sellerId String
-
-  amount Decimal @db.Decimal(12, 2)
-
-  status OfferStatus @default(PENDING)
-
-  message String?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  buyer User @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
-
-  seller User @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
-
-  order Order?
-
-  @@index([listingId])
-  @@index([buyerId])
-  @@index([sellerId])
-  @@index([status])
-}
-
-model Order {
-  id String @id @default(uuid())
-
-  listingId String @unique
-
-  buyerId String
-
-  sellerId String
-
-  offerId String? @unique
-
-  amount Decimal @db.Decimal(12, 2)
-
-  currency Currency @default(NGN)
-
-  status OrderStatus @default(PENDING)
-
-  shippingAddress String?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Restrict)
-
-  buyer User @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
-
-  seller User @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Restrict)
-
-  offer Offer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
-
-  payment Payment?
-
-  delivery Delivery?
-
-  review Review?
-}
-
-model Payment {
-  id String @id @default(uuid())
-
-  orderId String @unique
-
-  userId String
-
-  method PaymentMethod
-
-  status PaymentStatus @default(PENDING)
-
-  reference String? @unique
-
-  amount Decimal @db.Decimal(12, 2)
-
-  currency Currency @default(NGN)
-
-  paidAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([status])
-  @@index([reference])
-}
-
-model Delivery {
-  id String @id @default(uuid())
-
-  orderId String @unique
-
-  status DeliveryStatus @default(PENDING)
-
-  courier String?
-
-  trackingCode String?
-
-  pickupDate DateTime?
-
-  deliveredAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@index([status])
-  @@index([trackingCode])
-}
-
-model Review {
-  id String @id @default(uuid())
-
-  orderId String @unique
-
-  reviewerId String
-
-  revieweeId String
-
-  type ReviewType
-
-  rating Int
-
-  comment String?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  reviewer User @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
-
-  reviewee User @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
-
-  Listing   Listing? @relation(fields: [listingId], references: [id])
-  listingId String?
-
-  @@unique([orderId, reviewerId])
-  @@index([revieweeId])
-  @@index([rating])
-}
-
-model Report {
-  id String @id @default(uuid())
-
-  reporterId String
-
-  listingId String?
-
-  reportedUserId String?
-
-  reason ReportReason
-
-  description String?
-
-  status ReportStatus @default(PENDING)
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  reporter User @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
-
-  listing Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
-
-  reportedUser User? @relation(fields: [reportedUserId], references: [id], onDelete: SetNull)
-
-  @@index([reporterId])
-  @@index([listingId])
-  @@index([status])
-}
-
-model Notification {
-  id String @id @default(uuid())
-
-  userId String
-
-  title   String
-  message String
-
-  type NotificationType
-
-  referenceId   String?
-  referenceType String?
-
-  isRead Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([isRead])
-}
-
-model AuditLog {
-  id String @id @default(uuid())
-
-  userId String?
-
-  action AuditAction
-
-  entity String
-
-  entityId String?
-
-  description String?
-
-  metadata Json?
-
-  createdAt DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([entity])
-  @@index([createdAt])
-}
-
-model Banner {
-  id String @id @default(uuid())
-
-  title String
-
-  description String?
-
-  imageUrl String
-
-  linkUrl String?
-
-  status BannerStatus @default(ACTIVE)
-
-  position Int @default(0)
-
-  startDate DateTime?
-
-  endDate DateTime?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  @@index([status])
-  @@index([position])
-}
-
-model Advertisement {
-  id String @id @default(uuid())
-
-  userId String?
-
-  title String
-
-  description String?
-
-  imageUrl String?
-
-  linkUrl String?
-
-  status AdvertisementStatus @default(DRAFT)
-
-  startDate DateTime?
-
-  endDate DateTime?
-
-  views Int @default(0)
-
-  clicks Int @default(0)
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([status])
-}
-
-model SiteSetting {
-  id String @id @default(uuid())
-
-  key String @unique
-
-  value String
-
-  description String?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
 }

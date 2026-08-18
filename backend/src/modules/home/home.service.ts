@@ -1,4 +1,4 @@
-import prisma from "../../config/prisma";
+import { prisma } from "../../config/prisma";
 
 class HomeService {
 
@@ -23,37 +23,42 @@ class HomeService {
        */
       prisma.listing.findMany({
 
-        where: {
+  where: {
 
-          status: "ACTIVE",
+    status: "ACTIVE"
 
-          featured: true
+  },
 
-        },
+  take: 8,
 
-        take: 8,
+  orderBy: {
 
-        include: {
+    views: "desc"
 
-          images: true,
+  },
 
-          seller: {
+  include: {
+  images: true,
 
-            select: {
+  category: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  },
 
-              id: true,
+  seller: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      profileImage: true,
+    },
+  },
+}
 
-              name: true,
-
-              rating: true
-
-            }
-
-          }
-
-        }
-
-      }),
+}),
 
       /**
        * Latest Listings
@@ -75,10 +80,25 @@ class HomeService {
         },
 
         include: {
+  images: true,
 
-          images: true
+  category: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  },
 
-        }
+  seller: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      profileImage: true,
+    },
+  },
+}
 
       }),
 
@@ -102,10 +122,25 @@ class HomeService {
         },
 
         include: {
+  images: true,
 
-          images: true
+  category: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  },
 
-        }
+  seller: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      profileImage: true,
+    },
+  },
+}
 
       }),
 

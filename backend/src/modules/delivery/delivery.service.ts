@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
+import { OrderStatus, DeliveryStatus } from "@prisma/client";
 
 
 class DeliveryService {
@@ -44,14 +45,12 @@ class DeliveryService {
 
 
 
-    if (order.status !== "CONFIRMED") {
-
-      throw new AppError(
-        "Order must be confirmed before delivery.",
-        400
-      );
-
-    }
+    if (order.status !== OrderStatus.CONFIRMED) {
+  throw new AppError(
+    "Order must be confirmed before delivery.",
+    400
+  );
+}
 
 
 
@@ -170,7 +169,7 @@ class DeliveryService {
   async updateStatus(
     deliveryId: string,
     userId: string,
-    status: any
+    status: DeliveryStatus
   ) {
 
 
@@ -219,7 +218,7 @@ class DeliveryService {
           status,
 
           deliveredAt:
-            status === "DELIVERED"
+            status === DeliveryStatus.DELIVERED
               ? new Date()
               : null,
 
@@ -229,7 +228,7 @@ class DeliveryService {
 
 
 
-    if (status === "DELIVERED") {
+    if (status === DeliveryStatus.DELIVERED) {
 
       await prisma.order.update({
 
@@ -242,7 +241,7 @@ class DeliveryService {
 
         data: {
 
-          status: "DELIVERED",
+          status: OrderStatus.DELIVERED,
 
         },
 

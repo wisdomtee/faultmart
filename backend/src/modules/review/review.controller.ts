@@ -38,7 +38,7 @@ class ReviewController {
 
       const result =
         await reviewService.getUserReviews(
-          req.params.userId,
+          String(req.params.id),
           req.query
         );
 
@@ -59,7 +59,7 @@ class ReviewController {
 
       const result =
         await reviewService.getReviewById(
-          req.params.id
+          String(req.params.id)
         );
 
       return successResponse(
@@ -79,7 +79,7 @@ class ReviewController {
 
       const result =
         await reviewService.updateReview(
-          req.params.id,
+          String(req.params.id),
           req.user!.id,
           req.body
         );
@@ -101,7 +101,7 @@ class ReviewController {
 
       const result =
         await reviewService.deleteReview(
-          req.params.id,
+         String(req.params.id),
           req.user!.id
         );
 
@@ -122,7 +122,7 @@ class ReviewController {
 
       const result =
         await reviewService.getRatingSummary(
-          req.params.userId
+          String(req.params.id)
         );
 
       return successResponse(

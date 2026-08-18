@@ -28,6 +28,8 @@ import adminRoutes from "./modules/admin/admin.routes";
 import auditRoutes from "./modules/audit/audit.routes";
 import searchRoutes from "./modules/search/search.routes";
 import homeRoutes from "./modules/home/home.routes";
+import categoryRoutes from "./modules/category/category.routes";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 
@@ -63,6 +65,8 @@ app.use("/api/admin",adminRoutes);
 app.use("/api/audit",auditRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/home", homeRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use("/api/docs",swaggerUi.serve,swaggerUi.setup(swaggerSpec));
 

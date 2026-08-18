@@ -48,7 +48,7 @@ class PaymentController {
 
       const payment =
         await paymentService.getPayment(
-          req.params.orderId,
+          String(req.params.orderId),
           req.user.userId
         );
 
@@ -76,7 +76,7 @@ class PaymentController {
 
       const payment =
         await paymentService.updatePaymentStatus(
-          req.params.reference,
+          String(req.params.reference),
           req.body.status
         );
 

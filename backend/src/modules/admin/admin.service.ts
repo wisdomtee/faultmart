@@ -1,491 +1,574 @@
-import prisma from "../../config/prisma";
-import { UserStatus, ListingStatus, ReportStatus } from "@prisma/client";
+import { prisma } from "../../config/prisma";
+
 import {
   UserStatus,
   ListingStatus,
   ReportStatus,
-  OrderStatus
+  OrderStatus,
 } from "@prisma/client";
 
-
 class AdminService {
-
-
+  /**
+   * ============================================================
+   * ADMIN DASHBOARD
+   * ============================================================
+   */
   async getDashboard() {
+    const [
+      totalUsers,
+      activeUsers,
+      totalListings,
+      activeListings,
+      pendingListings,
+      totalOrders,
+      deliveredOrders,
+      revenue,
+      recentActivities,
+    ] = await Promise.all([
+      prisma.user.count(),
 
- const [
-  totalUsers,
-  activeUsers,
-  totalListings,
-  activeListings,
-  pendingListings,
-  totalOrders,
-  deliveredOrders,
-  revenue,
-  recentActivities,
-] = await Promise.all([
+      prisma.user.count({
+        where: {
+          status: UserStatus.ACTIVE,
+        },
+      }),
 
+      prisma.listing.count(),
 
-  prisma.user.count(),
+      prisma.listing.count({
+        where: {
+          status: ListingStatus.ACTIVE,
+        },
+      }),
 
+      prisma.listing.count({
+        where: {
+          status: ListingStatus.PENDING,
+        },
+      }),
 
-  prisma.user.count({
-    where:{
-  status: UserStatus.ACTIVE
-}
-  }),
+      prisma.order.count(),
 
+      prisma.order.count({
+        where: {
+          status: OrderStatus.DELIVERED,
+        },
+      }),
 
-  prisma.listing.count(),
+      prisma.order.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          status: OrderStatus.DELIVERED,
+        },
+      }),
 
+      prisma.auditLog.findMany({
+        take: 10,
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      }),
+    ]);
 
-  prisma.listing.count({
-    where:{
-  status: UserStatus.ACTIVE
-}
-  }),
-
-
-  prisma.listing.count({
-    where:{
-      status:"PENDING"
-    }
-  }),
-
-
-  prisma.order.count(),
-
-
-  prisma.order.count({
-    where:{
-      status: OrderStatus.DELIVERED
-    }
-  }),
-
-
-  prisma.order.aggregate({
-
-    _sum:{
-      amount:true
-    },
-
-    where:{
-      status: OrderStatus.DELIVERED
-    }
-
-  }),
-
-
-  prisma.auditLog.findMany({
-
-    take:10,
-
-    orderBy:{
-      createdAt:"desc"
-    },
-
-    include:{
-      user:{
-        select:{
-          id:true,
-          name:true,
-          email:true
-        }
-      }
-    }
-
-  })
-
-]);
-
-
-  return {
-
-  users:{
-    total: totalUsers,
-    active: activeUsers
-  },
-
-
-  listings:{
-    total: totalListings,
-    active: activeListings,
-    pending: pendingListings
-  },
-
-
-  orders:{
-    total: totalOrders,
-    completed: deliveredOrders
-  },
-
-
-  revenue:
-    Number(revenue._sum.amount ?? 0),
-
-
-  recentActivities
-
-};
-  }
-
-
-  async getUsers(
-  page = 1,
-  limit = 20,
-  search?: string,
-  status?: UserStatus
-){
-
-  const skip = (page - 1) * limit;
-
-
-  const where:any = {};
-
-
-  if(search){
-
-    where.OR = [
-      {
-        name:{
-          contains: search,
-          mode:"insensitive"
-        }
-      },
-      {
-        email:{
-          contains: search,
-          mode:"insensitive"
-        }
-      }
-    ];
-
-  }
-
-
-  if(status){
-
-    where.status = status;
-
-  }
-
-
-
-  const [
-    users,
-    total
-  ] = await Promise.all([
-
-
-    prisma.user.findMany({
-
-      where,
-
-      skip,
-
-      take:limit,
-
-      select:{
-        id:true,
-        name:true,
-        email:true,
-        role:true,
-        status:true,
-        createdAt:true
+    return {
+      users: {
+        total: totalUsers,
+        active: activeUsers,
       },
 
-      orderBy:{
-        createdAt:"desc"
-      }
-
-    }),
-
-
-    prisma.user.count({
-      where
-    })
-
-
-  ]);
-
-
-
-  return {
-
-    data: users,
-
-    pagination:{
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit)
-    }
-
-  };
-
-}
-
-
-  async updateUserStatus(
-    userId:string,
-    status:UserStatus
-  ){
-
-    return prisma.user.update({
-
-      where:{
-        id:userId
+      listings: {
+        total: totalListings,
+        active: activeListings,
+        pending: pendingListings,
       },
 
-      data:{
-        status
-      }
+      orders: {
+        total: totalOrders,
+        completed: deliveredOrders,
+      },
 
-    });
+      revenue: Number(revenue._sum.amount ?? 0),
 
-  }
-
-
-
-
-  async getListings(
-  page = 1,
-  limit = 20,
-  search?: string,
-  status?: ListingStatus
-){
-
-  const skip = (page - 1) * limit;
-
-
-  const where:any = {};
-
-
-  if(search){
-
-    where.title = {
-      contains: search,
-      mode:"insensitive"
+      recentActivities,
     };
-
   }
 
+  /**
+   * ============================================================
+   * GET USERS
+   * ============================================================
+   *
+   * Supports:
+   * - Pagination
+   * - Search by first name
+   * - Search by last name
+   * - Search by email
+   * - Status filtering
+   *
+   * Pagination is protected against invalid values.
+   */
+  async getUsers(
+    page = 1,
+    limit = 20,
+    search?: string,
+    status?: UserStatus
+  ) {
+    /**
+     * Prevent invalid pagination values.
+     *
+     * Page:
+     * minimum = 1
+     *
+     * Limit:
+     * minimum = 1
+     * maximum = 100
+     */
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(
+      Math.max(1, limit),
+      100
+    );
 
-  if(status){
+    const skip =
+      (safePage - 1) * safeLimit;
 
-    where.status = status;
+    const where: any = {};
 
+    /**
+     * Search users.
+     *
+     * trim() prevents searches containing
+     * only spaces from being sent to Prisma.
+     */
+    if (search?.trim()) {
+      const searchTerm = search.trim();
+
+      where.OR = [
+        {
+          firstName: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          lastName: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          email: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    /**
+     * Filter by status.
+     */
+    if (status) {
+      where.status = status;
+    }
+
+    /**
+     * Fetch users and total count in parallel.
+     */
+    const [users, total] =
+      await Promise.all([
+        prisma.user.findMany({
+          where,
+          skip,
+          take: safeLimit,
+
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+            status: true,
+            createdAt: true,
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+
+        prisma.user.count({
+          where,
+        }),
+      ]);
+
+    return {
+      data: users,
+
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        pages: Math.ceil(
+          total / safeLimit
+        ),
+      },
+    };
   }
 
+  /**
+   * ============================================================
+   * UPDATE USER STATUS
+   * ============================================================
+   *
+   * Admin can:
+   * - Activate users
+   * - Suspend users
+   * - Ban users
+   * - Set users to pending
+   *
+   * An admin cannot change their own account status.
+   */
+  async updateUserStatus(
+    userId: string,
+    status: UserStatus,
+    adminId?: string
+  ) {
+    /**
+     * Prevent an admin from accidentally
+     * suspending/banning themselves.
+     */
+    if (
+      adminId &&
+      userId === adminId
+    ) {
+      throw new Error(
+        "You cannot change your own account status."
+      );
+    }
 
-
-  const [
-    listings,
-    total
-  ] = await Promise.all([
-
-
-    prisma.listing.findMany({
-
-      where,
-
-      skip,
-
-      take:limit,
-
-
-      include:{
-
-        seller:{
-          select:{
-            id:true,
-            name:true,
-            email:true
-          }
+    /**
+     * Make sure the user exists before updating.
+     */
+    const user =
+      await prisma.user.findUnique({
+        where: {
+          id: userId,
         },
 
+        select: {
+          id: true,
+          role: true,
+          status: true,
+        },
+      });
 
-        images:true
-
-      },
-
-
-      orderBy:{
-        createdAt:"desc"
-      }
-
-    }),
-
-
-    prisma.listing.count({
-      where
-    })
-
-
-  ]);
-
-
-
-  return {
-
-    data:listings,
-
-    pagination:{
-
-      page,
-
-      limit,
-
-      total,
-
-      pages:Math.ceil(total / limit)
-
+    if (!user) {
+      throw new Error(
+        "User not found."
+      );
     }
 
-  };
+    /**
+     * Update status and return
+     * the user information needed by
+     * the admin frontend.
+     */
+    return prisma.user.update({
+      where: {
+        id: userId,
+      },
 
-}
+      data: {
+        status,
+      },
 
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+  }
 
+  /**
+   * ============================================================
+   * GET LISTINGS
+   * ============================================================
+   *
+   * Supports:
+   * - Pagination
+   * - Search by title
+   * - Listing status filtering
+   */
+  async getListings(
+    page = 1,
+    limit = 20,
+    search?: string,
+    status?: ListingStatus
+  ) {
+    /**
+     * Protect pagination values.
+     */
+    const safePage = Math.max(1, page);
 
+    const safeLimit = Math.min(
+      Math.max(1, limit),
+      100
+    );
+
+    const skip =
+      (safePage - 1) * safeLimit;
+
+    const where: any = {};
+
+    /**
+     * Search by listing title.
+     */
+    if (search?.trim()) {
+      where.title = {
+        contains: search.trim(),
+        mode: "insensitive",
+      };
+    }
+
+    /**
+     * Filter by listing status.
+     */
+    if (status) {
+      where.status = status;
+    }
+
+    /**
+     * Fetch listings and total count.
+     */
+    const [listings, total] =
+      await Promise.all([
+        prisma.listing.findMany({
+          where,
+          skip,
+          take: safeLimit,
+
+          include: {
+            seller: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+
+            images: true,
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+
+        prisma.listing.count({
+          where,
+        }),
+      ]);
+
+    return {
+      data: listings,
+
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        pages: Math.ceil(
+          total / safeLimit
+        ),
+      },
+    };
+  }
+
+  /**
+   * ============================================================
+   * UPDATE LISTING STATUS
+   * ============================================================
+   */
   async updateListingStatus(
-    listingId:string,
-    status:ListingStatus
-  ){
+    listingId: string,
+    status: ListingStatus
+  ) {
+    /**
+     * Make sure listing exists.
+     */
+    const listing =
+      await prisma.listing.findUnique({
+        where: {
+          id: listingId,
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+    if (!listing) {
+      throw new Error(
+        "Listing not found."
+      );
+    }
 
     return prisma.listing.update({
-
-      where:{
-        id:listingId
+      where: {
+        id: listingId,
       },
 
-      data:{
-        status
-      }
-
+      data: {
+        status,
+      },
     });
-
   }
 
-
-
-
+  /**
+   * ============================================================
+   * GET REPORTS
+   * ============================================================
+   *
+   * Supports:
+   * - Pagination
+   * - Report status filtering
+   */
   async getReports(
-  page = 1,
-  limit = 20,
-  status?: ReportStatus
-){
+    page = 1,
+    limit = 20,
+    status?: ReportStatus
+  ) {
+    /**
+     * Protect pagination values.
+     */
+    const safePage = Math.max(1, page);
 
-  const skip = (page - 1) * limit;
+    const safeLimit = Math.min(
+      Math.max(1, limit),
+      100
+    );
 
+    const skip =
+      (safePage - 1) * safeLimit;
 
-  const where:any = {};
+    const where: any = {};
 
-
-  if(status){
-
-    where.status = status;
-
-  }
-
-
-
-  const [
-    reports,
-    total
-  ] = await Promise.all([
-
-
-    prisma.report.findMany({
-
-      where,
-
-      skip,
-
-      take:limit,
-
-
-      include:{
-
-        reporter:{
-          select:{
-            id:true,
-            name:true,
-            email:true
-          }
-        },
-
-
-        listing:{
-          select:{
-            id:true,
-            title:true
-          }
-        }
-
-      },
-
-
-      orderBy:{
-        createdAt:"desc"
-      }
-
-    }),
-
-
-
-    prisma.report.count({
-      where
-    })
-
-
-  ]);
-
-
-
-  return {
-
-    data: reports,
-
-    pagination:{
-
-      page,
-
-      limit,
-
-      total,
-
-      pages:Math.ceil(total / limit)
-
+    /**
+     * Filter by report status.
+     */
+    if (status) {
+      where.status = status;
     }
 
-  };
+    /**
+     * Fetch reports and total count.
+     */
+    const [reports, total] =
+      await Promise.all([
+        prisma.report.findMany({
+          where,
+          skip,
+          take: safeLimit,
 
-}
+          include: {
+            reporter: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
 
+            listing: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
 
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
 
-  async updateReportStatus(
-    reportId:string,
-    status:ReportStatus
-  ){
+        prisma.report.count({
+          where,
+        }),
+      ]);
 
-    return prisma.report.update({
+    return {
+      data: reports,
 
-      where:{
-        id:reportId
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        pages: Math.ceil(
+          total / safeLimit
+        ),
       },
-
-      data:{
-        status
-      }
-
-    });
-
+    };
   }
 
+  /**
+   * ============================================================
+   * UPDATE REPORT STATUS
+   * ============================================================
+   */
+  async updateReportStatus(
+    reportId: string,
+    status: ReportStatus
+  ) {
+    /**
+     * Make sure report exists.
+     */
+    const report =
+      await prisma.report.findUnique({
+        where: {
+          id: reportId,
+        },
 
+        select: {
+          id: true,
+        },
+      });
+
+    if (!report) {
+      throw new Error(
+        "Report not found."
+      );
+    }
+
+    return prisma.report.update({
+      where: {
+        id: reportId,
+      },
+
+      data: {
+        status,
+      },
+    });
+  }
 }
-
 
 export default new AdminService();

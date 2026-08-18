@@ -1,4 +1,4 @@
-import prisma from "../../config/prisma";
+import { prisma } from "../../config/prisma";
 import { Prisma } from "@prisma/client";
 
 class SearchService {
@@ -177,12 +177,13 @@ if (query.minPrice || query.maxPrice) {
           images: true,
 
           seller: {
-            select: {
-              id: true,
-              name: true,
-              rating: true
-            }
-          }
+  select: {
+    id: true,
+    firstName: true,
+    lastName: true,
+    profileImage: true,
+  },
+},
 
         }
 

@@ -74,7 +74,7 @@ class OrderController {
 
       const order =
         await orderService.getOrderById(
-          req.params.id,
+          String(req.params.id),
           req.user.userId
         );
 
@@ -102,7 +102,7 @@ class OrderController {
 
       const order =
         await orderService.updateStatus(
-          req.params.id,
+          String(req.params.id),
           req.user.userId,
           req.body.status
         );
@@ -131,7 +131,7 @@ class OrderController {
 
       const order =
         await orderService.cancelOrder(
-          req.params.id,
+          String(req.params.id),
           req.user.userId
         );
 

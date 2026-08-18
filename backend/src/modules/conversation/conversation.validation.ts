@@ -2,14 +2,13 @@ import { z } from "zod";
 
 export const createConversationSchema = z.object({
   body: z.object({
-    participantId: z
-      .string()
-      .uuid("Invalid participant ID"),
-
     listingId: z
       .string()
-      .uuid("Invalid listing ID")
-      .optional(),
+      .uuid("Invalid listing ID"),
+
+    sellerId: z
+      .string()
+      .uuid("Invalid seller ID"),
   }),
 });
 

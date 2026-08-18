@@ -40,6 +40,8 @@ class OfferController {
    * GET /api/offers/received
    */
   getReceivedOffers = asyncHandler(async (req: Request, res: Response) => {
+    console.log("RECEIVED OFFERS USER ID:", req.user.userId);
+    
     const offers = await offerService.getReceivedOffers(
       req.user.userId
     );

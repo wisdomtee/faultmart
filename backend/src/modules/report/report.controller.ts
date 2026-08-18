@@ -50,7 +50,7 @@ class ReportController {
     async (req: Request, res: Response) => {
       const result =
         await reportService.getReportById(
-          req.params.id,
+          String(req.params.id),
           req.user!.id
         );
 
@@ -69,7 +69,7 @@ class ReportController {
     async (req: Request, res: Response) => {
       const result =
         await reportService.updateReportStatus(
-          req.params.id,
+          String(req.params.id),
           req.body.status
         );
 
@@ -88,7 +88,7 @@ class ReportController {
     async (req: Request, res: Response) => {
       const result =
         await reportService.deleteReport(
-          req.params.id
+          String(req.params.id)
         );
 
       return successResponse(

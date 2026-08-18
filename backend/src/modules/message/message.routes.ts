@@ -1,6 +1,8 @@
 import { Router } from "express";
-import messageController from "./message.controller";
+import { messageController } from "./message.controller";
 import { authenticate } from "../../middleware/auth.middleware";
+import { validate } from "../../middleware/validate";
+import { sendMessageSchema } from "../conversation/conversation.validation";
 
 const router = Router();
 
@@ -50,6 +52,7 @@ const router = Router();
 router.post(
   "/:conversationId",
   authenticate,
+  validate(sendMessageSchema),
   messageController.sendMessage
 );
 
