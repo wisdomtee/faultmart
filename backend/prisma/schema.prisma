@@ -41,8 +41,8 @@ model User {
   buyerOrders         Order[]                   @relation("BuyerOrders")
   sellerOrders        Order[]                   @relation("SellerOrders")
   passwordResetTokens PasswordResetToken[]
-  payments            Payment[]
   refreshTokens       RefreshToken[]
+  jobApplications     JobApplication[]
   reportsReceived     Report[]                  @relation("ReportedUser")
   reports             Report[]                  @relation("UserReports")
   Report              Report[]
@@ -386,33 +386,13 @@ model Order {
   shippingAddress String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-  delivery        Delivery?
-  buyer           User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  listing         Listing     @relation(fields: [listingId], references: [id])
-  offer           Offer?      @relation(fields: [offerId], references: [id])
-  seller          User        @relation("SellerOrders", fields: [sellerId], references: [id])
-  payment         Payment?
-  review          Review?
-}
 
-model Payment {
-  id        String        @id @default(uuid())
-  orderId   String        @unique
-  userId    String
-  method    PaymentMethod
-  status    PaymentStatus @default(PENDING)
-  reference String?       @unique
-  amount    Decimal       @db.Decimal(12, 2)
-  currency  Currency      @default(NGN)
-  paidAt    DateTime?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([status])
-  @@index([reference])
+  delivery Delivery?
+  buyer    User      @relation("BuyerOrders", fields: [buyerId], references: [id])
+  listing  Listing   @relation(fields: [listingId], references: [id])
+  offer    Offer?    @relation(fields: [offerId], references: [id])
+  seller   User      @relation("SellerOrders", fields: [sellerId], references: [id])
+  reviews  Review[]
 }
 
 model Delivery {
@@ -433,7 +413,7 @@ model Delivery {
 
 model Review {
   id         String     @id @default(uuid())
-  orderId    String     @unique
+  orderId    String
   reviewerId String
   revieweeId String
   type       ReviewType
@@ -442,10 +422,11 @@ model Review {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   listingId  String?
-  listing    Listing?   @relation(fields: [listingId], references: [id])
-  order      Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  reviewee   User       @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
-  reviewer   User       @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  listing  Listing? @relation(fields: [listingId], references: [id])
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reviewee User     @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+  reviewer User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
 
   @@unique([orderId, reviewerId])
   @@index([revieweeId])
@@ -550,6 +531,71 @@ model SiteSetting {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Job {
+  id               String         @id @default(uuid())
+  title            String
+  slug             String         @unique
+  department       String
+  location         String
+  employmentType   EmploymentType
+  description      String
+  responsibilities String
+  requirements     String
+  salaryRange      String?
+  status           JobStatus      @default(OPEN)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  applications JobApplication[]
+
+  @@index([status])
+  @@index([department])
+  @@index([employmentType])
+  @@index([createdAt])
+}
+
+model JobApplication {
+  id          String            @id @default(uuid())
+  jobId       String
+  userId      String
+  coverLetter String?
+  cvUrl       String
+  status      ApplicationStatus @default(PENDING)
+  adminNotes  String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId])
+  @@index([jobId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+  DRAFT
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  SHORTLISTED
+  REJECTED
+  HIRED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
 }
 
 enum Role {
@@ -665,22 +711,6 @@ enum OrderStatus {
   REFUNDED
 }
 
-enum PaymentMethod {
-  PAYSTACK
-  FLUTTERWAVE
-  BANK_TRANSFER
-  CASH_ON_DELIVERY
-}
-
-enum PaymentStatus {
-  PENDING
-  PROCESSING
-  SUCCESS
-  FAILED
-  REFUNDED
-  CANCELLED
-}
-
 enum DeliveryStatus {
   PENDING
   ASSIGNED
@@ -739,7 +769,6 @@ enum NotificationType {
   OFFER_ACCEPTED
   OFFER_REJECTED
   NEW_MESSAGE
-  PAYMENT_SUCCESSFUL
   ORDER_CONFIRMED
   DELIVERY_UPDATED
   NEW_REVIEW

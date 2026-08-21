@@ -5,8 +5,6 @@ export enum AppEvent {
 
   MESSAGE_RECEIVED = "message.received",
 
-  PAYMENT_SUCCESSFUL = "payment.successful",
-
   ORDER_CONFIRMED = "order.confirmed",
 
   DELIVERY_UPDATED = "delivery.updated",

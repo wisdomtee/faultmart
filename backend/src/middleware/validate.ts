@@ -9,7 +9,23 @@ export const validate =
     next: NextFunction
   ) => {
     try {
-      req.body = schema.parse(req.body);
+      const parsed = schema.parse({
+        body: req.body,
+        params: req.params,
+        query: req.query,
+      }) as {
+        body?: any;
+        params?: any;
+        query?: any;
+      };
+
+      if (parsed.body !== undefined) {
+        req.body = parsed.body;
+      }
+
+      if (parsed.params !== undefined) {
+        Object.assign(req.params, parsed.params);
+      }
 
       next();
     } catch (error) {

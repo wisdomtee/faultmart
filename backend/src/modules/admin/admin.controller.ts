@@ -5,6 +5,7 @@ import {
   UserStatus,
   ListingStatus,
   ReportStatus,
+  OrderStatus,
 } from "@prisma/client";
 
 import { asyncHandler } from "../../middleware/asyncHandler";
@@ -195,6 +196,59 @@ class AdminController {
     }
   );
 
+    /**
+   * ============================================================
+   * GET ORDERS
+   * ============================================================
+   */
+  getOrders = asyncHandler(
+    async (req: Request, res: Response) => {
+      const orders =
+        await adminService.getOrders(
+          Number(req.query.page) || 1,
+          Number(req.query.limit) || 20,
+          typeof req.query.search === "string"
+            ? req.query.search
+            : undefined,
+          typeof req.query.status === "string"
+            ? (req.query.status as OrderStatus)
+            : undefined
+        );
+
+      return successResponse(
+        res,
+        orders,
+        "Orders retrieved successfully."
+      );
+    }
+  );
+
+    /**
+   * ============================================================
+   * GET SINGLE ORDER
+   * ============================================================
+   */
+  getOrderById = asyncHandler(
+    async (req: Request, res: Response) => {
+      const orderId = req.params.id;
+
+      if (typeof orderId !== "string") {
+        throw new Error("Invalid order ID.");
+      }
+
+      const order =
+        await adminService.getOrderById(
+          orderId
+        );
+
+      return successResponse(
+        res,
+        order,
+        "Order retrieved successfully."
+      );
+    }
+  );
+  
   /**
    * ============================================================
    * GET REPORTS

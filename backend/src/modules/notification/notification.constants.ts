@@ -5,5 +5,4 @@ export const NOTIFICATION_TITLES = {
   OFFER_ACCEPTED: "Offer Accepted",
   OFFER_REJECTED: "Offer Rejected",
   NEW_MESSAGE: "New Message",
-  PAYMENT_SUCCESSFUL: "Payment Successful",
 } as const;

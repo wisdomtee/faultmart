@@ -10,21 +10,25 @@ class ConversationController {
    * POST /api/conversations
    */
   createConversation = asyncHandler(
-    async (req: Request, res: Response) => {
-      const conversation =
-        await conversationService.createConversation(
-          req.user.userId,
-          req.body
-        );
+  async (req: Request, res: Response) => {
 
-      return successResponse(
-        res,
-        conversation,
-        "Conversation created successfully.",
-        201
+    console.log("CREATE CONVERSATION BODY:", req.body);
+    console.log("CREATE CONVERSATION USER:", req.user.userId);
+
+    const conversation =
+      await conversationService.createConversation(
+        req.user.userId,
+        req.body
       );
-    }
-  );
+
+    return successResponse(
+      res,
+      conversation,
+      "Conversation created successfully.",
+      201
+    );
+  }
+);
 
   /**
    * GET /api/conversations

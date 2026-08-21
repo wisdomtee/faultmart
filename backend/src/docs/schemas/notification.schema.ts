@@ -28,7 +28,6 @@
  *             - OFFER_ACCEPTED
  *             - OFFER_REJECTED
  *             - NEW_MESSAGE
- *             - PAYMENT_SUCCESSFUL
  *             - ORDER_CONFIRMED
  *             - DELIVERY_UPDATED
  *             - NEW_REVIEW

@@ -18,7 +18,6 @@ import offerRoutes from "./modules/offer/offer.routes";
 import conversationRoutes from "./modules/conversation/conversation.routes";
 import messageRoutes from "./modules/message/message.routes";
 import orderRoutes from "./modules/order/order.routes";
-import paymentRoutes from "./modules/payment/payment.routes";
 import deliveryRoutes from "./modules/delivery/delivery.routes";
 import reviewRoutes from "./modules/review/review.routes";
 import reportRoutes from "./modules/report/report.routes";
@@ -30,6 +29,8 @@ import searchRoutes from "./modules/search/search.routes";
 import homeRoutes from "./modules/home/home.routes";
 import categoryRoutes from "./modules/category/category.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
+import careerRoutes from "./modules/career/career.routes";
+import aiRoutes from "./modules/ai/ai.routes";
 
 const app = express();
 
@@ -56,7 +57,6 @@ app.use("/api/offers", offerRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api/payments", paymentRoutes);
 app.use("/api/deliveries", deliveryRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/reports", reportRoutes);
@@ -67,6 +67,8 @@ app.use("/api/search", searchRoutes);
 app.use("/api/home", homeRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/careers", careerRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.use("/api/docs",swaggerUi.serve,swaggerUi.setup(swaggerSpec));
 

@@ -20,7 +20,10 @@ const router = Router();
  */
 router.use(
   authenticate,
-  requireRole(Role.ADMIN)
+  requireRole(
+    Role.SUPER_ADMIN,
+    Role.ADMIN
+  )
 );
 
 /**
@@ -69,7 +72,18 @@ router.patch(
   adminController.rejectListing
 );
 
+/**
+ * Orders
+ */
+router.get(
+  "/orders",
+  adminController.getOrders
+);
 
+router.get(
+  "/orders/:id",
+  adminController.getOrderById
+);
 /**
  * Reports
  */

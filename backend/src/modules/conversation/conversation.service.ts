@@ -29,6 +29,12 @@ class ConversationService {
     if (!listing) {
       throw new AppError("Listing not found.", 404);
     }
+    if (listing.sellerId !== sellerId) {
+  throw new AppError(
+    "The selected seller does not own this listing.",
+    400
+  );
+}
 
     // Check if conversation already exists
     const existingConversation =
@@ -36,17 +42,22 @@ class ConversationService {
     where: {
       listingId,
 
-      participants: {
-        some: {
-          userId: buyerId,
-        },
-
-        every: {
-          userId: {
-            in: [buyerId, sellerId],
+      AND: [
+        {
+          participants: {
+            some: {
+              userId: buyerId,
+            },
           },
         },
-      },
+        {
+          participants: {
+            some: {
+              userId: sellerId,
+            },
+          },
+        },
+      ],
     },
 
     include: {

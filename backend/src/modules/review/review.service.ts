@@ -415,20 +415,21 @@ class ReviewService {
    * Get User Rating Summary
    */
   async getRatingSummary(
-    userId: string
-  ) {
+  userId: string
+) {
 
-    const reviews = await prisma.review.findMany({
+  const reviews = await prisma.review.findMany({
 
-      where: {
-        revieweeId: userId,
-      },
+    where: {
+      revieweeId: userId,
+      type: "BUYER_TO_SELLER",
+    },
 
-      select: {
-        rating: true,
-      },
+    select: {
+      rating: true,
+    },
 
-    });
+  });
 
     const totalReviews = reviews.length;
 

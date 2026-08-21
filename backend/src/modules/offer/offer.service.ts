@@ -1,7 +1,9 @@
 import {
-  ListingStatus,
-  OfferStatus,
   Prisma,
+  PrismaClient,
+  OfferStatus,
+  ListingStatus,
+  OrderStatus,
 } from "@prisma/client";
 
 import { prisma } from "../../config/prisma";
@@ -159,73 +161,100 @@ class OfferService {
   /**
    * Accept Offer
    */
-  async acceptOffer(
-    sellerId: string,
-    offerId: string
-  ) {
-    const offer = await prisma.offer.findUnique({
+  /**
+ * Accept Offer
+ */
+async acceptOffer(
+  sellerId: string,
+  offerId: string
+) {
+  const offer = await prisma.offer.findUnique({
+    where: {
+      id: offerId,
+    },
+  });
+
+  if (!offer) {
+    throw new AppError("Offer not found.", 404);
+  }
+
+  if (offer.sellerId !== sellerId) {
+    throw new AppError(
+      "Unauthorized.",
+      403
+    );
+  }
+
+  if (offer.status !== OfferStatus.PENDING) {
+    throw new AppError(
+      "Offer has already been processed.",
+      400
+    );
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Accept the selected offer
+    await tx.offer.update({
       where: {
         id: offerId,
       },
+      data: {
+        status: OfferStatus.ACCEPTED,
+      },
     });
 
-    if (!offer) {
-      throw new AppError("Offer not found.", 404);
-    }
-
-    if (offer.sellerId !== sellerId) {
-      throw new AppError(
-        "Unauthorized.",
-        403
-      );
-    }
-
-    if (offer.status !== OfferStatus.PENDING) {
-      throw new AppError(
-        "Offer has already been processed.",
-        400
-      );
-    }
-
-    return prisma.$transaction(async (tx) => {
-      await tx.offer.update({
-        where: {
-          id: offerId,
+    // 2. Reject all other pending offers
+    await tx.offer.updateMany({
+      where: {
+        listingId: offer.listingId,
+        id: {
+          not: offer.id,
         },
-        data: {
-          status: OfferStatus.ACCEPTED,
-        },
-      });
-
-      await tx.offer.updateMany({
-        where: {
-          listingId: offer.listingId,
-          id: {
-            not: offer.id,
-          },
-          status: OfferStatus.PENDING,
-        },
-
-        data: {
-          status: OfferStatus.REJECTED,
-        },
-      });
-
-      await tx.listing.update({
-        where: {
-          id: offer.listingId,
-        },
-
-        data: {
-          status: ListingStatus.RESERVED,
-        },
-      });
-
-      return {
-        message: "Offer accepted successfully.",
-      };
+        status: OfferStatus.PENDING,
+      },
+      data: {
+        status: OfferStatus.REJECTED,
+      },
     });
-  }
+
+    // 3. Create the order
+    const order = await tx.order.create({
+      data: {
+        listingId: offer.listingId,
+        buyerId: offer.buyerId,
+        sellerId: offer.sellerId,
+        offerId: offer.id,
+        amount: offer.amount,
+        currency: (
+  await tx.listing.findUnique({
+    where: {
+      id: offer.listingId,
+    },
+    select: {
+      currency: true,
+    },
+  })
+)!.currency,
+        status: OrderStatus.PENDING,
+      },
+    });
+
+    // 4. Reserve the listing
+    await tx.listing.update({
+      where: {
+        id: offer.listingId,
+      },
+      data: {
+        status: ListingStatus.RESERVED,
+      },
+    });
+
+    return {
+      message: "Offer accepted successfully.",
+      order,
+    };
+  });
+}
 
   /**
    * Reject Offer
@@ -235,10 +264,13 @@ class OfferService {
     offerId: string
   ) {
     const offer = await prisma.offer.findUnique({
-      where: {
-        id: offerId,
-      },
-    });
+  where: {
+    id: offerId,
+  },
+  include: {
+    listing: true,
+  },
+});
 
     if (!offer) {
       throw new AppError("Offer not found.", 404);

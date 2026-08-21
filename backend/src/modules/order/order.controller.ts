@@ -118,7 +118,27 @@ class OrderController {
   );
 
 
+  /**
+   * Buyer confirms receipt
+   * PATCH /api/orders/:id/confirm-receipt
+   */
+  confirmReceipt = asyncHandler(
+    async (req: Request, res: Response) => {
 
+      const order =
+        await orderService.confirmReceipt(
+          String(req.params.id),
+          req.user.userId
+        );
+
+      return successResponse(
+        res,
+        order,
+        "Order marked as received successfully."
+      );
+
+    }
+  );
 
 
   /**

@@ -2,48 +2,122 @@ import cloudinary from "../../config/cloudinary";
 
 export class UploadService {
   /**
-   * Upload multiple images to Cloudinary
+   * ============================================================
+   * LISTING IMAGES
+   * ============================================================
    */
-  async uploadImages(files: Express.Multer.File[]) {
-    if (!files || files.length === 0) {
-      return [];
-    }
 
-    const uploads = await Promise.all(
-      files.map(
-        (file) =>
-          new Promise<{
-            url: string;
-            publicId: string;
-          }>((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
+  async uploadImages(files: Express.Multer.File[]) {
+  if (!files || files.length === 0) {
+    return [];
+  }
+
+  const uploads = await Promise.all(
+    files.map(
+      (file) =>
+        new Promise<{
+          url: string;
+          publicId: string;
+        }>((resolve, reject) => {
+          const stream =
+            cloudinary.uploader.upload_stream(
               {
                 folder: "faultmart/listings",
                 resource_type: "image",
               },
               (error, result) => {
                 if (error || !result) {
-                  return reject(error);
+                  return reject(
+                    error ||
+                      new Error(
+                        "Cloudinary upload failed"
+                      )
+                  );
                 }
 
+                const watermarkedUrl =
+                  cloudinary.url(
+                    result.public_id,
+                    {
+                      secure: true,
+                      transformation: [
+  {
+    overlay: "text:Arial_120_bold:FaultMart",
+    gravity: "center",
+    opacity: 45,
+    color: "white",
+    angle: -25,
+  },
+  {
+    quality: "auto",
+    fetch_format: "auto",
+  },
+],
+                    }
+                  );
+
+                console.log(
+                  "WATERMARKED IMAGE URL:",
+                  watermarkedUrl
+                );
+
                 resolve({
-                  url: result.secure_url,
+                  url: watermarkedUrl,
                   publicId: result.public_id,
                 });
               }
             );
 
-            stream.end(file.buffer);
-          })
-      )
-    );
+          stream.end(file.buffer);
+        })
+    )
+  );
 
-    return uploads;
+  return uploads;
+}
+
+  /**
+   * ============================================================
+   * CV UPLOAD
+   * ============================================================
+   */
+
+  async uploadCV(file: Express.Multer.File) {
+    if (!file) {
+      throw new Error("CV file is required");
+    }
+
+    return new Promise<{
+      url: string;
+      publicId: string;
+    }>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "faultmart/careers/cv",
+          resource_type: "raw",
+        },
+        (error, result) => {
+          if (error || !result) {
+            return reject(error);
+          }
+
+          resolve({
+            url: result.secure_url,
+            publicId: result.public_id,
+          });
+        }
+      );
+
+      stream.end(file.buffer);
+    });
   }
 
   /**
-   * Delete a single image from Cloudinary
+   * ============================================================
+   * DELETE SINGLE IMAGE
+   * ============================================================
    */
+
   async deleteImage(publicId: string) {
     if (!publicId) return;
 
@@ -51,17 +125,18 @@ export class UploadService {
   }
 
   /**
-   * Delete multiple images from Cloudinary
+   * ============================================================
+   * DELETE MULTIPLE IMAGES
+   * ============================================================
    */
+
   async deleteImages(publicIds: string[]) {
     if (!publicIds || publicIds.length === 0) {
       return;
     }
 
     await Promise.all(
-      publicIds.map((publicId) =>
-        this.deleteImage(publicId)
-      )
+      publicIds.map((publicId) => this.deleteImage(publicId))
     );
   }
 }

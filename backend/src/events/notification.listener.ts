@@ -54,7 +54,6 @@ eventEmitter.on(
 );
 
 // Add the remaining listeners:
-// PAYMENT_SUCCESSFUL
 // DELIVERY_UPDATED
 // REVIEW_CREATED
 // ADMIN_ACTION

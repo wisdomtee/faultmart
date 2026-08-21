@@ -100,6 +100,22 @@ router.get(
 
 /**
  * @swagger
+ * /api/orders/{id}/confirm-receipt:
+ *   patch:
+ *     summary: Confirm receipt of an order
+ *     description: Allows the buyer to confirm that they have received the item or service.
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.patch(
+  "/:id/confirm-receipt",
+  authenticate,
+  orderController.confirmReceipt
+);
+
+/**
+ * @swagger
  * /api/orders/{id}/status:
  *   patch:
  *     summary: Update order status

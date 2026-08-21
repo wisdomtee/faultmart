@@ -24,10 +24,9 @@ class HomeService {
       prisma.listing.findMany({
 
   where: {
-
-    status: "ACTIVE"
-
-  },
+  status: "ACTIVE",
+  deletedAt: null,
+},
 
   take: 8,
 

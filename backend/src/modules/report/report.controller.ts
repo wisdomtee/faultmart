@@ -12,7 +12,7 @@ class ReportController {
   createReport = asyncHandler(
     async (req: Request, res: Response) => {
       const result = await reportService.createReport(
-        req.user!.id,
+        req.user!.userId,
         req.body
       );
 
@@ -32,7 +32,7 @@ class ReportController {
     async (req: Request, res: Response) => {
       const result =
         await reportService.getMyReports(
-          req.user!.id
+          req.user!.userId
         );
 
       return successResponse(
@@ -51,7 +51,7 @@ class ReportController {
       const result =
         await reportService.getReportById(
           String(req.params.id),
-          req.user!.id
+          req.user!.userId
         );
 
       return successResponse(

@@ -25,7 +25,6 @@ tags:
   - name: Conversations
   - name: Messages
   - name: Orders
-  - name: Payments
   - name: Deliveries
   - name: Reviews
   - name: Reports

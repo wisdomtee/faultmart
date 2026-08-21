@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma";
+import { AppError } from "../../utils/AppError";
 
 import {
   UserStatus,
@@ -6,7 +7,6 @@ import {
   ReportStatus,
   OrderStatus,
 } from "@prisma/client";
-
 class AdminService {
   /**
    * ============================================================
@@ -442,6 +442,263 @@ class AdminService {
     });
   }
 
+    /**
+   * ============================================================
+   * GET ORDERS
+   * ============================================================
+   *
+   * Supports:
+   * - Pagination
+   * - Search by order ID
+   * - Search by buyer name/email
+   * - Search by seller name/email
+   * - Search by listing title
+   * - Order status filtering
+   */
+  async getOrders(
+    page = 1,
+    limit = 20,
+    search?: string,
+    status?: OrderStatus
+  ) {
+    /**
+     * Protect pagination values.
+     */
+    const safePage = Math.max(1, page);
+
+    const safeLimit = Math.min(
+      Math.max(1, limit),
+      100
+    );
+
+    const skip =
+      (safePage - 1) * safeLimit;
+
+    const where: any = {};
+
+    /**
+     * Search orders across:
+     * - Order ID
+     * - Listing title
+     * - Buyer name/email
+     * - Seller name/email
+     */
+    if (search?.trim()) {
+      const searchTerm = search.trim();
+
+      where.OR = [
+        {
+          id: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          listing: {
+            title: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          buyer: {
+            firstName: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          buyer: {
+            lastName: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          buyer: {
+            email: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          seller: {
+            firstName: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          seller: {
+            lastName: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          seller: {
+            email: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+      ];
+    }
+
+    /**
+     * Filter by order status.
+     */
+    if (status) {
+      where.status = status;
+    }
+
+    /**
+     * Fetch orders and total count.
+     */
+    const [orders, total] =
+      await Promise.all([
+        prisma.order.findMany({
+          where,
+          skip,
+          take: safeLimit,
+
+          include: {
+            buyer: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+
+            seller: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+
+            listing: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                price: true,
+                currency: true,
+              },
+            },
+
+            delivery: true,
+
+            offer: {
+              select: {
+                id: true,
+                amount: true,
+                status: true,
+                createdAt: true,
+              },
+            },
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+
+        prisma.order.count({
+          where,
+        }),
+      ]);
+
+    return {
+      data: orders,
+
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        pages: Math.ceil(
+          total / safeLimit
+        ),
+      },
+    };
+  }
+
+    /**
+   * ============================================================
+   * GET SINGLE ORDER
+   * ============================================================
+   */
+  async getOrderById(orderId: string) {
+    const order = await prisma.order.findUnique({
+      where: {
+        id: orderId,
+      },
+
+      include: {
+        buyer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+          },
+        },
+
+        seller: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+          },
+        },
+
+        listing: {
+          include: {
+            images: true,
+            vehicleDetail: true,
+            applianceDetail: true,
+          },
+        },
+
+        delivery: true,
+
+        offer: {
+          select: {
+            id: true,
+            amount: true,
+            status: true,
+            message: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new AppError(
+        "Order not found.",
+        404
+      );
+    }
+
+    return order;
+  }
+
   /**
    * ============================================================
    * GET REPORTS
@@ -489,22 +746,31 @@ class AdminService {
           take: safeLimit,
 
           include: {
-            reporter: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
-            },
+  reporter: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+    },
+  },
 
-            listing: {
-              select: {
-                id: true,
-                title: true,
-              },
-            },
-          },
+  reportedUser: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+    },
+  },
+
+  listing: {
+    select: {
+      id: true,
+      title: true,
+    },
+  },
+},
 
           orderBy: {
             createdAt: "desc",
@@ -554,10 +820,11 @@ class AdminService {
       });
 
     if (!report) {
-      throw new Error(
-        "Report not found."
-      );
-    }
+  throw new AppError(
+    "Report not found.",
+    404
+  );
+}
 
     return prisma.report.update({
       where: {
