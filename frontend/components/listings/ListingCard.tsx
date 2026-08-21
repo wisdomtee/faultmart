@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   Eye,
@@ -11,28 +13,29 @@ import {
 import ListingBadge from "./ListingBadge";
 import ListingImage from "./ListingImage";
 import ListingPrice from "./ListingPrice";
+import FaultSeverityBadge from "./FaultSeverityBadge";
 
 import { Listing } from "@/types/listing";
-import FaultSeverityBadge from "./FaultSeverityBadge";
 import { formatDistanceToNow } from "date-fns";
 
 interface Props {
   listing: Listing;
 }
 
-export default function ListingCard({
-  listing,
-}: Props) {
-
+export default function ListingCard({ listing }: Props) {
   const image =
-    listing.images.length > 0
-      ? listing.images[0].url
+    listing.images?.length > 0
+      ? listing.images[0]?.url
       : undefined;
 
+  const seller = listing.seller;
 
   const sellerName =
-    `${listing.seller.firstName} ${listing.seller.lastName}`;
-
+    seller?.name ||
+    [seller?.firstName, seller?.lastName]
+      .filter(Boolean)
+      .join(" ") ||
+    "FaultMart Seller";
 
   const location =
     listing.city ||
@@ -40,14 +43,13 @@ export default function ListingCard({
     listing.location ||
     "Location unavailable";
 
+  const views = listing.views ?? 0;
 
   return (
-
     <Link
       href={`/listings/${listing.slug}`}
       className="group block h-full"
     >
-
       <article
         className="
           flex
@@ -65,8 +67,6 @@ export default function ListingCard({
           hover:shadow-xl
         "
       >
-
-
         {/* IMAGE */}
 
         <div
@@ -76,12 +76,10 @@ export default function ListingCard({
             overflow-hidden
           "
         >
-
           <ListingImage
             src={image}
             alt={listing.title}
           />
-
 
           <div
             className="
@@ -97,32 +95,36 @@ export default function ListingCard({
             "
           />
 
+          {/* BADGES */}
 
           <div
-  className="
-    absolute
-    left-4
-    top-4
-    flex
-    flex-col
-    gap-2
-  "
->
+            className="
+              absolute
+              left-4
+              top-4
+              flex
+              flex-col
+              gap-2
+            "
+          >
+            <ListingBadge
+              condition={listing.condition ?? "UNKNOWN"}
+            />
 
-  <ListingBadge
-  condition={listing.condition ?? "UNKNOWN"}
-/>
+            <FaultSeverityBadge
+              severity={listing.faultSeverity}
+            />
+          </div>
 
-  <FaultSeverityBadge
-    severity={listing.faultSeverity}
-  />
-
-</div>
-
-
+          {/* FAVOURITE */}
 
           <button
             type="button"
+            aria-label="Save listing"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
             className="
               absolute
               right-4
@@ -143,11 +145,7 @@ export default function ListingCard({
           >
             <Heart className="h-5 w-5" />
           </button>
-
-
         </div>
-
-
 
         {/* CONTENT */}
 
@@ -159,14 +157,10 @@ export default function ListingCard({
             p-5
           "
         >
-
-
           <ListingPrice
             price={listing.price}
             currency={listing.currency}
           />
-
-
 
           <h3
             className="
@@ -183,107 +177,96 @@ export default function ListingCard({
             {listing.title}
           </h3>
 
-
-
+          {/* CATEGORY / STATUS */}
 
           <div className="mt-4 flex flex-wrap gap-2">
+            <span
+              className="
+                inline-flex
+                rounded-full
+                bg-orange-50
+                px-3
+                py-1
+                text-xs
+                font-bold
+                text-orange-700
+              "
+            >
+              {listing.category?.name ?? "Uncategorized"}
+            </span>
 
-  <span
-    className="
-      inline-flex
-      rounded-full
-      bg-orange-50
-      px-3
-      py-1
-      text-xs
-      font-bold
-      text-orange-700
-    "
-  >
-    {listing.category.name}
-  </span>
+            {listing.status && (
+              <span
+                className={`
+                  inline-flex
+                  rounded-full
+                  px-3
+                  py-1
+                  text-xs
+                  font-bold
+                  ${
+                    listing.status === "ACTIVE"
+                      ? "bg-green-100 text-green-700"
+                      : listing.status === "SOLD"
+                      ? "bg-neutral-200 text-neutral-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }
+                `}
+              >
+                {listing.status.replaceAll("_", " ")}
+              </span>
+            )}
+          </div>
 
-
-  {listing.status && (
-    <span
-      className={`
-        inline-flex
-        rounded-full
-        px-3
-        py-1
-        text-xs
-        font-bold
-        ${
-          listing.status === "ACTIVE"
-            ? "bg-green-100 text-green-700"
-            : listing.status === "SOLD"
-            ? "bg-neutral-200 text-neutral-700"
-            : "bg-yellow-100 text-yellow-700"
-        }
-      `}
-    >
-      {listing.status.replace("_", " ")}
-    </span>
-  )}
-
-</div>
-
-
+          {/* LOCATION / DATE */}
 
           <div
-  className="
-    mt-4
-    space-y-2
-    text-sm
-    text-neutral-500
-  "
->
+            className="
+              mt-4
+              space-y-2
+              text-sm
+              text-neutral-500
+            "
+          >
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+              "
+            >
+              <MapPin
+                className="
+                  h-4
+                  w-4
+                  shrink-0
+                  text-orange-500
+                "
+              />
 
-  <div
-    className="
-      flex
-      items-center
-      gap-2
-    "
-  >
-    <MapPin
-      className="
-        h-4
-        w-4
-        text-orange-500
-      "
-    />
+              <span className="truncate">
+                {location}
+              </span>
+            </div>
 
-    <span className="truncate">
-      {location}
-    </span>
-
-  </div>
-
-
-  <div
-    className="
-      text-xs
-      font-medium
-      text-neutral-400
-    "
-  >
-    🕒 Posted{" "}
-    {formatDistanceToNow(
-  new Date(listing.createdAt ?? Date.now()),
-  {
-    addSuffix: true,
-  }
-)}
-  </div>
-
-</div>
-
-
+            <div
+              className="
+                text-xs
+                font-medium
+                text-neutral-400
+              "
+            >
+              🕒 Posted{" "}
+              {formatDistanceToNow(
+                new Date(listing.createdAt ?? Date.now()),
+                {
+                  addSuffix: true,
+                }
+              )}
+            </div>
+          </div>
 
           <div className="flex-1" />
-
-
 
           {/* SELLER */}
 
@@ -295,29 +278,28 @@ export default function ListingCard({
               pt-5
             "
           >
-
             <div
               className="
                 flex
                 items-center
                 justify-between
+                gap-3
               "
             >
-
-
               <div
                 className="
                   flex
+                  min-w-0
                   items-center
                   gap-3
                 "
               >
-
                 <div
                   className="
                     flex
                     h-10
                     w-10
+                    shrink-0
                     items-center
                     justify-center
                     rounded-full
@@ -325,15 +307,10 @@ export default function ListingCard({
                     text-orange-600
                   "
                 >
-
                   <User className="h-5 w-5" />
-
                 </div>
 
-
-
-                <div>
-
+                <div className="min-w-0">
                   <p
                     className="
                       max-w-[120px]
@@ -346,7 +323,6 @@ export default function ListingCard({
                     {sellerName}
                   </p>
 
-
                   <div
                     className="
                       flex
@@ -357,24 +333,17 @@ export default function ListingCard({
                       text-green-600
                     "
                   >
-
                     <ShieldCheck className="h-3.5 w-3.5" />
 
                     Verified Seller
-
                   </div>
-
-
                 </div>
-
               </div>
-
-
-
 
               <div
                 className="
                   flex
+                  shrink-0
                   items-center
                   gap-1
                   rounded-full
@@ -386,17 +355,13 @@ export default function ListingCard({
                   text-neutral-600
                 "
               >
-
                 <Eye className="h-4 w-4" />
 
-                {listing.views}
-
+                {views.toLocaleString()}
               </div>
-
-
             </div>
 
-
+            {/* VIEW DETAILS */}
 
             <div
               className="
@@ -412,7 +377,6 @@ export default function ListingCard({
                 group-hover:bg-orange-50
               "
             >
-
               <span
                 className="
                   text-sm
@@ -423,7 +387,6 @@ export default function ListingCard({
                 View Details
               </span>
 
-
               <ArrowRight
                 className="
                   h-5
@@ -433,20 +396,10 @@ export default function ListingCard({
                   group-hover:translate-x-1
                 "
               />
-
             </div>
-
-
           </div>
-
-
         </div>
-
-
       </article>
-
-
     </Link>
-
   );
 }

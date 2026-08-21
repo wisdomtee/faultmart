@@ -21,7 +21,7 @@ export default function SearchBar() {
     );
 
     if (search.trim()) {
-      params.set("search", search);
+      params.set("search", search.trim());
     } else {
       params.delete("search");
     }
@@ -33,7 +33,6 @@ export default function SearchBar() {
 
   return (
     <section className="rounded-3xl border bg-white p-6 shadow-sm">
-
       <div className="flex flex-col gap-4 md:flex-row">
 
         <div className="relative flex-1">
@@ -68,8 +67,12 @@ export default function SearchBar() {
               rounded-2xl
               border
               border-gray-200
+              bg-white
               pl-12
               pr-4
+              text-black
+              caret-black
+              placeholder:text-gray-400
               outline-none
               transition
               focus:border-orange-500
@@ -81,6 +84,7 @@ export default function SearchBar() {
         </div>
 
         <button
+          type="button"
           onClick={handleSearch}
           className="
             h-14
@@ -97,7 +101,6 @@ export default function SearchBar() {
         </button>
 
       </div>
-
     </section>
   );
 }

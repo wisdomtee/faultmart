@@ -1,54 +1,61 @@
 import {
-  Car,
   Users,
-  MapPinned,
-  BadgeCheck,
+  Package,
+  CheckCircle2,
+  Star,
   ShieldCheck,
 } from "lucide-react";
 
 import Container from "@/components/layout/Container";
 
+interface MarketplaceStatistics {
+  users: number;
+  listings: number;
+  sold: number;
+  reviews: number;
+}
 
-const stats = [
-  {
-    icon: Car,
-    value: "14,000+",
-    label: "Active Listings",
-    description: "Vehicles, phones & appliances",
-    color: "text-orange-400",
-  },
+interface Props {
+  statistics: MarketplaceStatistics;
+}
 
-  {
-    icon: Users,
-    value: "2,800+",
-    label: "Verified Sellers",
-    description: "Trusted marketplace users",
-    color: "text-blue-400",
-  },
-
-  {
-    icon: MapPinned,
-    value: "36",
-    label: "States Covered",
-    description: "Nationwide marketplace reach",
-    color: "text-green-400",
-  },
-
-  {
-    icon: BadgeCheck,
-    value: "98%",
-    label: "Buyer Satisfaction",
-    description: "Successful transactions",
-    color: "text-purple-400",
-  },
-];
-
-
-
-export default function MarketplaceStats() {
+export default function MarketplaceStats({ statistics }: Props) {
+  const stats = [
+    {
+      value: statistics.users.toLocaleString(),
+      label: "Registered Users",
+      description:
+        "Buyers and sellers growing the FaultMart community.",
+      color: "text-blue-400",
+      icon: Users,
+    },
+    {
+      value: statistics.listings.toLocaleString(),
+      label: "Active Listings",
+      description:
+        "Repairable vehicles, electronics and appliances.",
+      color: "text-orange-400",
+      icon: Package,
+    },
+    {
+      value: statistics.sold.toLocaleString(),
+      label: "Items Sold",
+      description:
+        "Successful marketplace transactions.",
+      color: "text-green-400",
+      icon: CheckCircle2,
+    },
+    {
+      value: statistics.reviews.toLocaleString(),
+      label: "Reviews",
+      description:
+        "Feedback from the FaultMart community.",
+      color: "text-yellow-400",
+      icon: Star,
+    },
+  ];
 
   return (
-
     <section
       className="
         relative
@@ -57,8 +64,6 @@ export default function MarketplaceStats() {
         py-28
       "
     >
-
-
       {/* Background Glow */}
 
       <div
@@ -75,11 +80,7 @@ export default function MarketplaceStats() {
         "
       />
 
-
-
       <Container>
-
-
         <div
           className="
             relative
@@ -92,9 +93,6 @@ export default function MarketplaceStats() {
             md:px-12
           "
         >
-
-
-
           {/* Decorative circles */}
 
           <div
@@ -123,13 +121,7 @@ export default function MarketplaceStats() {
             "
           />
 
-
-
-
-
           <div className="relative">
-
-
 
             {/* Heading */}
 
@@ -141,8 +133,6 @@ export default function MarketplaceStats() {
                 text-center
               "
             >
-
-
               <div
                 className="
                   inline-flex
@@ -161,15 +151,10 @@ export default function MarketplaceStats() {
                   text-orange-400
                 "
               >
-
-                <ShieldCheck className="h-4 w-4"/>
+                <ShieldCheck className="h-4 w-4" />
 
                 Trusted Marketplace
-
               </div>
-
-
-
 
               <h2
                 className="
@@ -181,15 +166,11 @@ export default function MarketplaceStats() {
                   md:text-5xl
                 "
               >
-
                 Growing With
                 <span className="text-orange-500">
                   {" "}Nigeria
                 </span>
-
               </h2>
-
-
 
               <p
                 className="
@@ -200,21 +181,11 @@ export default function MarketplaceStats() {
                   text-neutral-400
                 "
               >
-
                 FaultMart connects buyers and sellers across
                 Nigeria with transparent listings and trusted
                 marketplace experiences.
-
               </p>
-
-
             </div>
-
-
-
-
-
-
 
             {/* Stats */}
 
@@ -226,15 +197,10 @@ export default function MarketplaceStats() {
                 lg:grid-cols-4
               "
             >
-
-              {stats.map((stat)=>{
-
-
+              {stats.map((stat) => {
                 const Icon = stat.icon;
 
-
                 return (
-
                   <div
                     key={stat.label}
                     className="
@@ -252,9 +218,6 @@ export default function MarketplaceStats() {
                       hover:border-orange-400/30
                     "
                   >
-
-
-
                     <div
                       className={`
                         mx-auto
@@ -271,13 +234,8 @@ export default function MarketplaceStats() {
                         group-hover:scale-110
                       `}
                     >
-
-                      <Icon className="h-8 w-8"/>
-
+                      <Icon className="h-8 w-8" />
                     </div>
-
-
-
 
                     <h3
                       className="
@@ -287,13 +245,8 @@ export default function MarketplaceStats() {
                         text-white
                       "
                     >
-
                       {stat.value}
-
                     </h3>
-
-
-
 
                     <p
                       className="
@@ -303,13 +256,8 @@ export default function MarketplaceStats() {
                         text-white
                       "
                     >
-
                       {stat.label}
-
                     </p>
-
-
-
 
                     <p
                       className="
@@ -318,26 +266,12 @@ export default function MarketplaceStats() {
                         text-neutral-400
                       "
                     >
-
                       {stat.description}
-
                     </p>
-
-
-
                   </div>
-
                 );
-
-
               })}
-
-
             </div>
-
-
-
-
 
             {/* Bottom Trust Message */}
 
@@ -355,25 +289,13 @@ export default function MarketplaceStats() {
                 text-neutral-300
               "
             >
-
-              🔥 Thousands of buyers are discovering repairable
-              products every month on FaultMart.
-
+              🔥 Building a trusted marketplace for repairable
+              products across Nigeria.
             </div>
 
-
-
           </div>
-
-
-
         </div>
-
-
       </Container>
-
-
     </section>
-
   );
 }

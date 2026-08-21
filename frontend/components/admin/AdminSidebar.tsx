@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Users,
   Car,
+  ShoppingCart,
   Flag,
 } from "lucide-react";
 
@@ -27,6 +28,11 @@ const links = [
     name: "Listings",
     href: "/admin/listings",
     icon: Car,
+  },
+  {
+    name: "Orders",
+    href: "/admin/orders",
+    icon: ShoppingCart,
   },
   {
     name: "Reports",

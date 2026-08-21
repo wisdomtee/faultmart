@@ -39,7 +39,7 @@ const CONDITIONS = [
   { value: "FAULTY", label: "Faulty" },
   { value: "USED", label: "Used" },
   { value: "REFURBISHED", label: "Refurbished" },
-  { value: "NEW", label: "New" },
+  { value: "BRAND_NEW", label: "New" },
 ];
 
 const FAULT_SEVERITIES = [

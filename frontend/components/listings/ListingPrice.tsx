@@ -1,5 +1,5 @@
 interface Props {
-  price: number;
+  price: number | string;
   currency: string;
 }
 
@@ -7,10 +7,10 @@ export default function ListingPrice({
   price,
   currency,
 }: Props) {
+  const numericPrice = Number(price);
 
   return (
     <div className="flex items-baseline gap-2">
-
       <span
         className="
           text-2xl
@@ -22,7 +22,6 @@ export default function ListingPrice({
         {currency}
       </span>
 
-
       <span
         className="
           text-3xl
@@ -31,9 +30,10 @@ export default function ListingPrice({
           text-neutral-950
         "
       >
-        {price.toLocaleString()}
+        {Number.isFinite(numericPrice)
+          ? numericPrice.toLocaleString()
+          : "—"}
       </span>
-
     </div>
   );
 }

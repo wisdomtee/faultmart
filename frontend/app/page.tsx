@@ -10,36 +10,10 @@ import MarketplaceStats from "@/components/home/MarketplaceStats";
 import LatestListings from "@/components/home/LatestListings";
 import CTA from "@/components/home/CTA";
 
-export default function HomePage() {
-  // Temporary static data for the public landing page.
-  // Real marketplace data will come from the backend
-  // once the API is deployed.
-  const categories = [
-    {
-      id: "vehicles",
-      name: "Vehicles",
-      slug: "vehicles",
-      count: 0,
-    },
-    {
-      id: "electronics",
-      name: "Electronics",
-      slug: "electronics",
-      count: 0,
-    },
-    {
-      id: "appliances",
-      name: "Appliances",
-      slug: "appliances",
-      count: 0,
-    },
-    {
-      id: "parts",
-      name: "Parts & Tools",
-      slug: "parts",
-      count: 0,
-    },
-  ];
+import { getHomeData } from "@/lib/api";
+
+export default async function HomePage() {
+  const homeData = await getHomeData();
 
   return (
     <>
@@ -50,13 +24,13 @@ export default function HomePage() {
       <WhatIsFaultMart />
 
       {/* 3. What can people buy? */}
-      <Categories categories={categories} />
+      <Categories categories={homeData.categories} />
 
       {/* 4. Explain the process */}
       <HowItWorks />
 
-      {/* 5. Marketplace inventory */}
-      <FeaturedListings listings={[]} />
+      {/* 5. Featured marketplace inventory */}
+      <FeaturedListings listings={homeData.featured} />
 
       {/* 6. Trust */}
       <WhyChoose />
@@ -65,13 +39,13 @@ export default function HomePage() {
       <BuyerSeller />
 
       {/* 8. Popular products */}
-      <PopularListings listings={[]} />
+      <PopularListings listings={homeData.popular} />
 
       {/* 9. Marketplace credibility */}
-      <MarketplaceStats />
+      <MarketplaceStats statistics={homeData.statistics} />
 
       {/* 10. Fresh inventory */}
-      <LatestListings listings={[]} />
+      <LatestListings listings={homeData.latest} />
 
       {/* 11. Final conversion */}
       <CTA />

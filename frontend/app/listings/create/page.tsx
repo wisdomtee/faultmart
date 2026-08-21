@@ -9,9 +9,18 @@ import {
   Loader2,
   Trash2,
   Upload,
+  Sparkles,
+  Check,
+  AlertCircle,
 } from "lucide-react";
 
-import { createListing, getCategories } from "@/lib/api";
+import {
+  createListing,
+  generateListingAssistant,
+  getCategories,
+  type ListingAssistantResult,
+} from "@/lib/api";
+import TransactionDisclaimer from "@/components/legal/TransactionDisclaimer";
 
 interface Category {
   id: string;
@@ -23,7 +32,7 @@ const CONDITIONS = [
   { value: "FAULTY", label: "Faulty" },
   { value: "USED", label: "Used" },
   { value: "REFURBISHED", label: "Refurbished" },
-  { value: "NEW", label: "New" },
+  { value: "BRAND_NEW", label: "New" },
 ];
 
 const FAULT_SEVERITIES = [
@@ -52,9 +61,15 @@ export default function CreateListingPage() {
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
   const [negotiable, setNegotiable] = useState(true);
+  const [sellerDisclaimerAccepted, setSellerDisclaimerAccepted] =
+  useState(false);
 
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+const [aiError, setAiError] = useState<string | null>(null);
+const [aiResult, setAiResult] =
+  useState<ListingAssistantResult | null>(null);
 
   useEffect(() => {
     async function loadCategories() {
@@ -161,6 +176,153 @@ export default function CreateListingPage() {
     };
   }, [previews]);
 
+  async function handleGenerateAI() {
+  setAiError(null);
+  setAiResult(null);
+
+  if (
+    !title.trim() &&
+    !description.trim() &&
+    !faultDescription.trim()
+  ) {
+    setAiError(
+      "Please provide at least a title, description, or fault description before using AI."
+    );
+    return;
+  }
+
+  try {
+    setAiLoading(true);
+
+    const selectedCategory = categories.find(
+      (category) => category.id === categoryId
+    );
+
+    const result = await generateListingAssistant({
+      title: title.trim() || undefined,
+      description:
+        description.trim() || undefined,
+      category:
+        selectedCategory?.name || undefined,
+      condition:
+        condition || undefined,
+      faultSeverity:
+        faultSeverity || undefined,
+      faultDescription:
+        faultDescription.trim() || undefined,
+    });
+
+    setAiResult(result);
+  } catch (err: any) {
+    console.error(
+      "AI Listing Assistant Error:",
+      err
+    );
+
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      "Unable to generate AI suggestions. Please try again.";
+
+    setAiError(message);
+  } finally {
+    setAiLoading(false);
+  }
+}
+function applyAISuggestions() {
+  if (!aiResult) {
+    return;
+  }
+
+  if (aiResult.suggestedTitle?.trim()) {
+    setTitle(aiResult.suggestedTitle.trim());
+  }
+
+  if (aiResult.improvedDescription?.trim()) {
+    setDescription(
+      aiResult.improvedDescription.trim()
+    );
+  }
+
+  if (aiResult.suggestedFaultSeverity) {
+    setFaultSeverity(
+      aiResult.suggestedFaultSeverity
+    );
+  }
+
+  setAiError(null);
+}
+
+function applyAITitle() {
+  if (aiResult?.suggestedTitle?.trim()) {
+    setTitle(aiResult.suggestedTitle.trim());
+  }
+}
+
+function applyAIDescription() {
+  if (aiResult?.improvedDescription?.trim()) {
+    setDescription(
+      aiResult.improvedDescription.trim()
+    );
+  }
+}
+
+function applyAIFaultSeverity() {
+  if (aiResult?.suggestedFaultSeverity) {
+    setFaultSeverity(
+      aiResult.suggestedFaultSeverity
+    );
+  }
+}
+
+async function handleAIListingAssistant() {
+  setAiError(null);
+  setAiResult(null);
+
+  if (
+    !title.trim() &&
+    !description.trim() &&
+    !faultDescription.trim()
+  ) {
+    setAiError(
+      "Please enter some listing information before using the AI assistant."
+    );
+    return;
+  }
+
+  try {
+    setAiLoading(true);
+
+    const selectedCategory = categories.find(
+      (category) => category.id === categoryId
+    );
+
+    const result = await generateListingAssistant({
+      title: title.trim() || undefined,
+      description: description.trim() || undefined,
+      category: selectedCategory?.name,
+      condition: condition || undefined,
+      faultSeverity: faultSeverity || undefined,
+      faultDescription:
+        faultDescription.trim() || undefined,
+    });
+
+    setAiResult(result);
+  } catch (err: any) {
+    console.error(
+      "AI Listing Assistant Error:",
+      err
+    );
+
+    setAiError(
+      err?.response?.data?.message ||
+        err?.message ||
+        "Unable to generate AI suggestions. Please try again."
+    );
+  } finally {
+    setAiLoading(false);
+  }
+}
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
   ) {
@@ -202,7 +364,13 @@ export default function CreateListingPage() {
       setError("Please enter the city.");
       return;
     }
+if (!sellerDisclaimerAccepted) {
+  setError(
+    "Please acknowledge the seller transaction disclaimer before creating your listing."
+  );
 
+  return;
+}
     try {
       setSubmitting(true);
 
@@ -334,13 +502,152 @@ export default function CreateListingPage() {
 
               {/* Description */}
               <div>
-                <label
-                  htmlFor="description"
-                  className="mb-2 block text-sm font-semibold text-neutral-800"
-                >
-                  Description
-                </label>
+  <div className="mb-2 flex items-center justify-between gap-3">
+    <label
+      htmlFor="description"
+      className="block text-sm font-semibold text-neutral-800"
+    >
+      Description
+    </label>
 
+    <button
+      type="button"
+      onClick={handleAIListingAssistant}
+      disabled={aiLoading || submitting}
+      className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {aiLoading ? (
+        <>
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Improving...
+        </>
+      ) : (
+        <>
+          ✨ Improve with AI
+        </>
+      )}
+    </button>
+  </div>
+{aiError && (
+  <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    {aiError}
+  </div>
+)}
+
+{aiResult && (
+  <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
+    <div className="mb-4">
+      <h3 className="text-sm font-bold text-neutral-900">
+        ✨ AI Listing Suggestions
+      </h3>
+
+      <p className="mt-1 text-xs text-neutral-500">
+        Review the suggestions below before applying them.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      {/* Suggested title */}
+      {aiResult.suggestedTitle && (
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Suggested Title
+          </p>
+
+          <p className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800">
+            {aiResult.suggestedTitle}
+          </p>
+        </div>
+      )}
+
+      {/* Improved description */}
+      {aiResult.improvedDescription && (
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Improved Description
+          </p>
+
+          <p className="whitespace-pre-line rounded-lg border border-neutral-200 bg-white px-3 py-3 text-sm leading-6 text-neutral-800">
+            {aiResult.improvedDescription}
+          </p>
+        </div>
+      )}
+
+      {/* Severity */}
+      {aiResult.suggestedFaultSeverity && (
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Suggested Fault Severity
+          </p>
+
+          <p className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-800">
+            {aiResult.suggestedFaultSeverity}
+          </p>
+        </div>
+      )}
+
+      {/* Suggestions */}
+      {aiResult.suggestions?.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Helpful Suggestions
+          </p>
+
+          <ul className="space-y-2">
+            {aiResult.suggestions.map(
+              (suggestion, index) => (
+                <li
+                  key={`${suggestion}-${index}`}
+                  className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700"
+                >
+                  {suggestion}
+                </li>
+              )
+            )}
+          </ul>
+        </div>
+      )}
+
+      {/* Apply */}
+      <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+        <button
+          type="button"
+          onClick={() => {
+            if (aiResult.suggestedTitle) {
+              setTitle(aiResult.suggestedTitle);
+            }
+
+            if (aiResult.improvedDescription) {
+              setDescription(
+                aiResult.improvedDescription
+              );
+            }
+
+            if (aiResult.suggestedFaultSeverity) {
+              setFaultSeverity(
+                aiResult.suggestedFaultSeverity
+              );
+            }
+
+            setAiResult(null);
+            setAiError(null);
+          }}
+          className="inline-flex items-center justify-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+        >
+          Apply AI Suggestions
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAiResult(null)}
+          className="rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+        >
+          Keep My Version
+        </button>
+      </div>
+    </div>
+  </div>
+)}
                 <textarea
                   id="description"
                   value={description}
@@ -465,6 +772,175 @@ export default function CreateListingPage() {
               </div>
 
             </div>
+          </section>
+
+          {/* AI Listing Assistant */}
+          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-900 text-white">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+
+                  <h2 className="text-lg font-bold text-neutral-900">
+                    AI Listing Assistant
+                  </h2>
+                </div>
+
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
+                  Improve your listing title and description,
+                  and get suggestions for information buyers
+                  may need. AI suggestions are optional and
+                  should be reviewed before applying them.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGenerateAI}
+                disabled={aiLoading || submitting}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {aiLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Improve with AI
+                  </>
+                )}
+              </button>
+            </div>
+
+            {aiError && (
+              <div className="mt-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{aiError}</span>
+              </div>
+            )}
+
+            {aiResult && (
+              <div className="mt-6 space-y-5 border-t border-neutral-100 pt-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-900">
+                      AI Suggestions
+                    </h3>
+
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Review each suggestion before applying it.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={applyAISuggestions}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Apply All
+                  </button>
+                </div>
+
+                {/* Suggested Title */}
+                {aiResult.suggestedTitle && (
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">
+                        Suggested Title
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={applyAITitle}
+                        className="text-xs font-semibold text-neutral-900 hover:underline"
+                      >
+                        Apply
+                      </button>
+                    </div>
+
+                    <p className="mt-2 text-sm font-semibold text-neutral-900">
+                      {aiResult.suggestedTitle}
+                    </p>
+                  </div>
+                )}
+
+                {/* Improved Description */}
+                {aiResult.improvedDescription && (
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">
+                        Improved Description
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={applyAIDescription}
+                        className="text-xs font-semibold text-neutral-900 hover:underline"
+                      >
+                        Apply
+                      </button>
+                    </div>
+
+                    <p className="mt-2 whitespace-pre-line text-sm leading-6 text-neutral-700">
+                      {aiResult.improvedDescription}
+                    </p>
+                  </div>
+                )}
+
+                {/* Fault Severity */}
+                {aiResult.suggestedFaultSeverity && (
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">
+                          Suggested Fault Severity
+                        </p>
+
+                        <p className="mt-2 text-sm font-semibold text-neutral-900">
+                          {aiResult.suggestedFaultSeverity}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={applyAIFaultSeverity}
+                        className="text-xs font-semibold text-neutral-900 hover:underline"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional Suggestions */}
+                {aiResult.suggestions?.length > 0 && (
+                  <div className="rounded-xl border border-neutral-200 bg-white p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">
+                      Suggestions for Buyers
+                    </p>
+
+                    <ul className="mt-3 space-y-2">
+                      {aiResult.suggestions.map(
+                        (suggestion, index) => (
+                          <li
+                            key={`${suggestion}-${index}`}
+                            className="flex items-start gap-2 text-sm leading-5 text-neutral-700"
+                          >
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-400" />
+                            <span>{suggestion}</span>
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Fault Details */}
@@ -736,6 +1212,27 @@ export default function CreateListingPage() {
               </span>
             </label>
           </section>
+
+{/* Seller Transaction Disclaimer */}
+<section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+  <div className="mb-4">
+    <h2 className="text-lg font-bold text-neutral-900">
+      Seller Responsibility
+    </h2>
+
+    <p className="mt-1 text-sm text-neutral-500">
+      Please review and acknowledge your responsibility
+      for the information provided in this listing.
+    </p>
+  </div>
+
+  <TransactionDisclaimer
+    role="seller"
+    checked={sellerDisclaimerAccepted}
+    onChange={setSellerDisclaimerAccepted}
+      disabled={submitting}
+  />
+</section>
 
           {/* Submit */}
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

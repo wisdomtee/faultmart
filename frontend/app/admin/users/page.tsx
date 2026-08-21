@@ -8,8 +8,6 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
-  UserCheck,
-  UserX,
   Shield,
 } from "lucide-react";
 

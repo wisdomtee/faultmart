@@ -7,6 +7,7 @@ import {
   Clock3,
   Loader2,
   Package,
+  Star,
   Truck,
   XCircle,
 } from "lucide-react";
@@ -15,7 +16,9 @@ import {
   getMyOrders,
   updateOrderStatus,
   cancelOrder,
+  createReview,
 } from "@/lib/api";
+import { useAuthStore } from "@/store/auth-store";
 
 interface Order {
   id: string;
@@ -25,14 +28,16 @@ interface Order {
   shippingAddress?: string | null;
 
   buyer?: {
-    firstName?: string | null;
-    lastName?: string | null;
-  } | null;
+  id?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+} | null;
 
-  seller?: {
-    firstName?: string | null;
-    lastName?: string | null;
-  } | null;
+seller?: {
+  id?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+} | null;
 
   listing?: {
     id?: string;
@@ -147,6 +152,23 @@ export default function OrdersPage() {
     null
   );
 
+  const { user } = useAuthStore();
+
+const [reviewingOrder, setReviewingOrder] =
+  useState<Order | null>(null);
+
+const [reviewRating, setReviewRating] =
+  useState(0);
+
+const [reviewComment, setReviewComment] =
+  useState("");
+
+const [submittingReview, setSubmittingReview] =
+  useState(false);
+
+const [reviewedOrderIds, setReviewedOrderIds] =
+  useState<string[]>([]);
+
   async function loadOrders() {
     try {
       setLoading(true);
@@ -207,6 +229,71 @@ export default function OrdersPage() {
       setUpdatingId(null);
     }
   }
+
+  async function handleReviewSubmit() {
+  if (!reviewingOrder) return;
+
+  try {
+    setSubmittingReview(true);
+    setError(null);
+
+    await createReview({
+      orderId: reviewingOrder.id,
+      rating: reviewRating,
+      comment: reviewComment,
+      type: "BUYER_TO_SELLER",
+    });
+
+    setReviewedOrderIds((prev) => [
+      ...prev,
+      reviewingOrder.id,
+    ]);
+
+    setReviewingOrder(null);
+    setReviewRating(5);
+    setReviewComment("");
+  } catch (err) {
+    console.error("Review Error:", err);
+    setError("Unable to submit your review.");
+  } finally {
+    setSubmittingReview(false);
+  }
+}
+
+  async function handleSubmitReview() {
+  if (!reviewingOrder) return;
+
+  if (reviewRating < 1 || reviewRating > 5) {
+    setError("Please select a rating from 1 to 5 stars.");
+    return;
+  }
+
+  try {
+    setSubmittingReview(true);
+    setError(null);
+
+    await createReview({
+      orderId: reviewingOrder.id,
+      rating: reviewRating,
+      comment: reviewComment.trim() || undefined,
+      type: "BUYER_TO_SELLER",
+    });
+
+    setReviewedOrderIds((current) => [
+      ...current,
+      reviewingOrder.id,
+    ]);
+
+    setReviewingOrder(null);
+    setReviewRating(0);
+    setReviewComment("");
+  } catch (err) {
+    console.error("Create Review Error:", err);
+    setError("Unable to submit your review.");
+  } finally {
+    setSubmittingReview(false);
+  }
+}
 
   if (loading) {
     return (
@@ -292,6 +379,13 @@ export default function OrdersPage() {
 
               const imageUrl =
                 order.listing?.images?.[0]?.url;
+const isBuyer =
+  order.buyer?.id === user?.id;
+
+const canReview =
+  order.status?.toUpperCase() === "DELIVERED" &&
+  isBuyer &&
+  !reviewedOrderIds.includes(order.id);
 
               return (
                 <div
@@ -471,13 +565,116 @@ export default function OrdersPage() {
                         Cancel Order
                       </button>
                     )}
+                    {canReview && (
+  <button
+    onClick={() => setReviewingOrder(order)}
+    className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-600"
+  >
+    ⭐ Leave Review
+  </button>
+)}
                   </div>
                 </div>
               );
             })}
           </div>
         </section>
-      )}
-    </main>
-  );
+          )}
+        
+
+        {reviewingOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-neutral-900">
+                    Leave a Review
+                  </h2>
+
+                  <p className="mt-1 text-sm text-neutral-500">
+                    How was your experience with the seller?
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setReviewingOrder(null)}
+                  className="text-neutral-400 transition hover:text-neutral-700"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-6">
+                <p className="text-sm font-semibold text-neutral-700">
+                  Rating
+                </p>
+
+                <div className="mt-3 flex gap-2">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <button
+                      key={rating}
+                      type="button"
+                      onClick={() => setReviewRating(rating)}
+                      className={`text-3xl transition ${
+                        rating <= reviewRating
+                          ? "text-amber-400"
+                          : "text-neutral-300"
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <label className="text-sm font-semibold text-neutral-700">
+                  Comment
+                </label>
+
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  maxLength={1000}
+                  rows={5}
+                  placeholder="Tell the seller about your experience..."
+                  className="mt-2 w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
+                />
+
+                <p className="mt-1 text-right text-xs text-neutral-400">
+                  {reviewComment.length}/1000
+                </p>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setReviewingOrder(null)}
+                  disabled={submittingReview}
+                  className="rounded-xl border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleReviewSubmit}
+                  disabled={submittingReview}
+                  className="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {submittingReview && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+
+                  {submittingReview
+                    ? "Submitting..."
+                    : "Submit Review"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    );
 }

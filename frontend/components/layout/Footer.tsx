@@ -106,7 +106,7 @@ export default function Footer() {
 
               <li>
                 <Link
-                  href="/sell"
+                  href="/listings/create"
                   className="transition hover:text-orange-400"
                 >
                   Sell an Item
@@ -115,7 +115,7 @@ export default function Footer() {
 
               <li>
                 <Link
-                  href="/latest"
+                  href="/listings"
                   className="transition hover:text-orange-400"
                 >
                   Latest Listings

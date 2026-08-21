@@ -22,7 +22,7 @@ export default function BuiltByTechNerve({
         alt="TechNerve"
         width={width}
         height={height}
-        className={`h-8 w-auto object-contain ${className}`}
+        className={`w-auto object-contain ${className}`}
       />
     </div>
   );

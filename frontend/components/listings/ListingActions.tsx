@@ -6,14 +6,23 @@ import {
   Heart,
   MessageCircle,
   BadgeDollarSign,
+  ShoppingCart,
   Loader2,
   X,
+  MapPin,
+  Flag,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 import ShareButton from "./ShareButton";
-import { createConversation, createOffer } from "@/lib/api";
+import TransactionDisclaimer from "@/components/legal/TransactionDisclaimer";
+import {
+  createConversation,
+  createOffer,
+  createOrder,
+  createReport,
+} from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
 interface Props {
@@ -33,6 +42,15 @@ export default function ListingActions({
 
   const [startingChat, setStartingChat] = useState(false);
 
+  const [showPurchaseModal, setShowPurchaseModal] =
+  useState(false);
+
+const [shippingAddress, setShippingAddress] =
+  useState("");
+
+const [submittingPurchase, setSubmittingPurchase] =
+  useState(false);
+
   const [showOfferModal, setShowOfferModal] = useState(false);
 
   const [offerAmount, setOfferAmount] = useState("");
@@ -41,12 +59,118 @@ export default function ListingActions({
 
   const [submittingOffer, setSubmittingOffer] = useState(false);
 
+  const [offerDisclaimerAccepted, setOfferDisclaimerAccepted] =
+  useState(false);
+
+    const [showReportModal, setShowReportModal] =
+    useState(false);
+
+  const [reportReason, setReportReason] =
+    useState("");
+
+  const [reportDescription, setReportDescription] =
+    useState("");
+
+  const [submittingReport, setSubmittingReport] =
+    useState(false);
+
   /*
    * WhatsApp URL
    */
   const whatsapp = phone
     ? `https://wa.me/${phone.replace(/\D/g, "")}`
     : "#";
+
+    /*
+ * ============================================================
+ * BUY NOW
+ * ============================================================
+ */
+function handleBuyNow() {
+  if (!user) {
+    toast.error("Please log in to purchase this item.");
+
+    router.push(
+      `/login?redirect=/listings/${listingId}`
+    );
+
+    return;
+  }
+
+  if (user.id === sellerId) {
+    toast.error(
+      "You cannot purchase your own listing."
+    );
+
+    return;
+  }
+
+  setShowPurchaseModal(true);
+}
+
+/*
+ * ============================================================
+ * SUBMIT PURCHASE
+ * ============================================================
+ */
+async function handleSubmitPurchase() {
+  if (!shippingAddress.trim()) {
+    toast.error("Please enter your shipping address.");
+
+    return;
+  }
+
+  if (!user) {
+    toast.error("Please log in to purchase this item.");
+
+    router.push(
+      `/login?redirect=/listings/${listingId}`
+    );
+
+    return;
+  }
+
+  if (user.id === sellerId) {
+    toast.error(
+      "You cannot purchase your own listing."
+    );
+
+    return;
+  }
+
+  try {
+    setSubmittingPurchase(true);
+
+    const order = await createOrder({
+      listingId,
+      shippingAddress: shippingAddress.trim(),
+    });
+
+    toast.success(
+      "Purchase placed successfully!"
+    );
+
+    setShippingAddress("");
+    setShowPurchaseModal(false);
+
+    router.push(
+      `/dashboard/orders?order=${order.id}`
+    );
+  } catch (error: any) {
+    console.error(
+      "FAILED TO CREATE ORDER:",
+      error?.response?.data || error
+    );
+
+    const message =
+      error?.response?.data?.message ||
+      "Unable to complete your purchase.";
+
+    toast.error(message);
+  } finally {
+    setSubmittingPurchase(false);
+  }
+}
 
   /*
    * ============================================================
@@ -154,6 +278,14 @@ export default function ListingActions({
       return;
     }
 
+    if (!offerDisclaimerAccepted) {
+  toast.error(
+    "Please acknowledge the transaction disclaimer before submitting your offer."
+  );
+
+  return;
+}
+
     try {
       setSubmittingOffer(true);
 
@@ -176,7 +308,8 @@ export default function ListingActions({
        * Reset form
        */
       setOfferAmount("");
-      setOfferMessage("");
+setOfferMessage("");
+setOfferDisclaimerAccepted(false);
 
       /*
        * Close modal
@@ -244,16 +377,15 @@ export default function ListingActions({
       return;
     }
 
-    try {
+        try {
       setStartingChat(true);
 
       console.log("CREATING CONVERSATION...");
 
-      const conversation =
-        await createConversation(
-          listingId,
-          sellerId
-        );
+      const conversation = await createConversation(
+        listingId,
+        sellerId
+      );
 
       console.log(
         "CONVERSATION CREATED:",
@@ -263,10 +395,10 @@ export default function ListingActions({
       router.push(
         `/messages/${conversation.id}`
       );
-    } catch (error: any) {
+        } catch (error: any) {
       console.error(
         "FAILED TO CREATE CONVERSATION:",
-        error
+        error?.response?.data || error
       );
 
       const message =
@@ -285,11 +417,107 @@ export default function ListingActions({
    * ============================================================
    */
   function handleCloseOfferModal() {
-    if (submittingOffer) {
+  if (submittingOffer) {
+    return;
+  }
+
+  setShowOfferModal(false);
+  setOfferDisclaimerAccepted(false);
+}
+
+  /*
+   * ============================================================
+   * REPORT LISTING
+   * ============================================================
+   */
+  function handleReportListing() {
+    if (!user) {
+      toast.error("Please log in to report this listing.");
+
+      router.push(
+        `/login?redirect=/listings/${listingId}`
+      );
+
       return;
     }
 
-    setShowOfferModal(false);
+    if (user.id === sellerId) {
+      toast.error(
+        "You cannot report your own listing."
+      );
+
+      return;
+    }
+
+    setReportReason("");
+    setReportDescription("");
+    setShowReportModal(true);
+  }
+
+  /*
+   * ============================================================
+   * SUBMIT REPORT
+   * ============================================================
+   */
+  async function handleSubmitReport() {
+    if (!reportReason) {
+      toast.error("Please select a reason for your report.");
+
+      return;
+    }
+
+    if (!user) {
+      toast.error("Please log in to report this listing.");
+
+      router.push(
+        `/login?redirect=/listings/${listingId}`
+      );
+
+      return;
+    }
+
+    if (user.id === sellerId) {
+      toast.error(
+        "You cannot report your own listing."
+      );
+
+      return;
+    }
+
+    try {
+  setSubmittingReport(true);
+
+  console.log("REPORT REASON BEING SENT:", JSON.stringify(reportReason));
+  console.log("REPORT LISTING ID:", listingId);
+
+  await createReport({
+        listingId,
+        reason: reportReason,
+        description:
+          reportDescription.trim() || undefined,
+      });
+
+      toast.success(
+        "Report submitted. Thank you for helping keep FaultMart safe."
+      );
+
+      setReportReason("");
+      setReportDescription("");
+      setShowReportModal(false);
+    } catch (error: any) {
+      console.error(
+        "FAILED TO SUBMIT REPORT:",
+        error?.response?.data || error
+      );
+
+      const message =
+        error?.response?.data?.message ||
+        "Unable to submit your report.";
+
+      toast.error(message);
+    } finally {
+      setSubmittingReport(false);
+    }
   }
 
   return (
@@ -299,6 +527,34 @@ export default function ListingActions({
       ======================================================= */}
 
       <div className="relative z-50 space-y-4">
+        {/* ====================================================
+    BUY NOW
+==================================================== */}
+<button
+  type="button"
+  onClick={handleBuyNow}
+  className="
+    relative
+    z-50
+    flex
+    w-full
+    cursor-pointer
+    items-center
+    justify-center
+    gap-2
+    rounded-xl
+    bg-green-600
+    py-4
+    font-bold
+    text-white
+    transition
+    hover:bg-green-700
+    active:scale-[0.99]
+  "
+>
+  <ShoppingCart className="h-5 w-5" />
+  Buy Now
+</button>
         {/* ====================================================
             MAKE OFFER
         ===================================================== */}
@@ -431,6 +687,33 @@ export default function ListingActions({
           Save Listing
         </button>
 
+        {/* ====================================================
+            REPORT LISTING
+        ===================================================== */}
+        <button
+          type="button"
+          onClick={handleReportListing}
+          className="
+            flex
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            border
+            border-red-200
+            py-3
+            font-semibold
+            text-red-600
+            transition
+            hover:bg-red-50
+            active:scale-[0.99]
+          "
+        >
+          <Flag className="h-5 w-5" />
+          Report Listing
+        </button>
+        
         {/* ====================================================
             SHARE
         ===================================================== */}
@@ -636,10 +919,24 @@ export default function ListingActions({
                 Cancel
               </button>
 
+{/* ==================================================
+    TRANSACTION DISCLAIMER
+=================================================== */}
+<div className="mb-6">
+  <TransactionDisclaimer
+    role="buyer"
+    checked={offerDisclaimerAccepted}
+    onChange={setOfferDisclaimerAccepted}
+    disabled={submittingOffer}
+  />
+</div>
               {/* SUBMIT */}
               <button
                 type="button"
-                disabled={submittingOffer}
+                disabled={
+  submittingOffer ||
+  !offerDisclaimerAccepted
+}
                 onClick={handleSubmitOffer}
                 className="
                   flex
@@ -648,7 +945,7 @@ export default function ListingActions({
                   justify-center
                   gap-2
                   rounded-xl
-                  bg-orange-600
+                  bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50
                   py-3
                   font-bold
                   text-white
@@ -670,6 +967,266 @@ export default function ListingActions({
           </div>
         </div>
       )}
+
+      {/* ======================================================
+          REPORT LISTING MODAL
+      ======================================================= */}
+
+      {showReportModal && (
+        <div
+          className="
+            fixed
+            inset-0
+            z-[70]
+            flex
+            items-center
+            justify-center
+            bg-black/50
+            px-4
+          "
+          onClick={() => {
+            if (!submittingReport) {
+              setShowReportModal(false);
+            }
+          }}
+        >
+          <div
+            className="
+              w-full
+              max-w-md
+              rounded-2xl
+              bg-white
+              p-6
+              shadow-2xl
+            "
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            {/* Header */}
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <Flag className="h-5 w-5 text-red-600" />
+
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Report Listing
+                  </h2>
+                </div>
+
+                <p className="text-sm text-gray-500">
+                  Help us keep FaultMart safe by telling us
+                  what is wrong with this listing.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                disabled={submittingReport}
+                onClick={() =>
+                  setShowReportModal(false)
+                }
+                className="
+                  rounded-full
+                  p-2
+                  text-gray-500
+                  transition
+                  hover:bg-gray-100
+                  hover:text-gray-900
+                  disabled:opacity-50
+                "
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Reason */}
+            <div className="mb-5">
+              <label
+                htmlFor="report-reason"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-gray-700
+                "
+              >
+                Reason for Report
+              </label>
+
+              <select
+                id="report-reason"
+                value={reportReason}
+                onChange={(event) =>
+                  setReportReason(event.target.value)
+                }
+                disabled={submittingReport}
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-gray-300
+                  bg-white
+                  px-4
+                  py-3
+                  text-sm
+                  outline-none
+                  transition
+                  focus:border-red-500
+                  focus:ring-2
+                  focus:ring-red-100
+                  disabled:bg-gray-50
+                "
+              >
+                <option value="">
+  Select a reason
+</option>
+
+<option value="SPAM">
+  Spam or irrelevant listing
+</option>
+
+<option value="FRAUD">
+  Fraudulent listing
+</option>
+
+<option value="FAKE_ITEM">
+  Fake or counterfeit item
+</option>
+
+<option value="PROHIBITED_ITEM">
+  Prohibited item
+</option>
+
+<option value="ABUSE">
+  Abusive or inappropriate content
+</option>
+
+<option value="SCAM">
+  Scam or suspicious activity
+</option>
+
+<option value="OTHER">
+  Other
+</option>
+              </select>
+            </div>
+
+            {/* Description */}
+            <div className="mb-6">
+              <label
+                htmlFor="report-description"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-gray-700
+                "
+              >
+                Additional Details
+                <span className="ml-1 font-normal text-gray-400">
+                  (optional)
+                </span>
+              </label>
+
+              <textarea
+                id="report-description"
+                value={reportDescription}
+                onChange={(event) =>
+                  setReportDescription(
+                    event.target.value
+                  )
+                }
+                placeholder="Tell us more about the issue..."
+                rows={4}
+                maxLength={1000}
+                disabled={submittingReport}
+                className="
+                  w-full
+                  resize-none
+                  rounded-xl
+                  border
+                  border-gray-300
+                  px-4
+                  py-3
+                  text-sm
+                  outline-none
+                  transition
+                  focus:border-red-500
+                  focus:ring-2
+                  focus:ring-red-100
+                  disabled:bg-gray-50
+                "
+              />
+
+              <p className="mt-1 text-right text-xs text-gray-400">
+                {reportDescription.length}/1000
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={submittingReport}
+                onClick={() =>
+                  setShowReportModal(false)
+                }
+                className="
+                  flex-1
+                  rounded-xl
+                  border
+                  border-gray-300
+                  py-3
+                  font-semibold
+                  text-gray-700
+                  transition
+                  hover:bg-gray-50
+                  disabled:opacity-50
+                "
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  submittingReport ||
+                  !reportReason
+                }
+                onClick={handleSubmitReport}
+                className="
+                  flex
+                  flex-1
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-xl
+                  bg-red-600
+                  py-3
+                  font-bold
+                  text-white
+                  transition
+                  hover:bg-red-700
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                {submittingReport && (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                )}
+
+                {submittingReport
+                  ? "Submitting..."
+                  : "Submit Report"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }

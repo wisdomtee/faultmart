@@ -57,7 +57,7 @@ export default function Header() {
             </Link>
 
             <Link
-              href="/search"
+              href="/listings"
               className="text-sm font-medium text-neutral-700 transition hover:text-orange-600"
             >
               Browse
@@ -98,27 +98,45 @@ export default function Header() {
                   <Heart className="h-5 w-5" />
                 </Button>
 
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  className="
-                    flex
-                    items-center
-                    gap-2
-                    rounded-full
-                    border
-                    border-neutral-200
-                    px-4
-                    py-2
-                    transition
-                    hover:bg-neutral-100
-                  "
-                >
-                  <User className="h-4 w-4" />
+                <div className="flex items-center gap-2">
+  <button
+    onClick={() => router.push("/dashboard")}
+    className="
+      flex
+      items-center
+      gap-2
+      rounded-full
+      border
+      border-neutral-200
+      px-4
+      py-2
+      transition
+      hover:bg-neutral-100
+    "
+  >
+    <User className="h-4 w-4" />
 
-                  <span className="text-sm font-medium">
-                    Hi, {user?.firstName}
-                  </span>
-                </button>
+    <span className="text-sm font-medium">
+      Hi, {user?.firstName}
+    </span>
+  </button>
+
+  <Link
+    href="/dashboard/profile"
+    className="
+      rounded-full
+      px-4
+      py-2
+      text-sm
+      font-medium
+      text-neutral-700
+      transition
+      hover:bg-neutral-100
+    "
+  >
+    Profile
+  </Link>
+</div>
 
                 <Button
                   variant="ghost"
@@ -146,8 +164,8 @@ export default function Header() {
               onClick={() =>
                 router.push(
                   isAuthenticated
-                    ? "/dashboard/listings/create"
-                    : "/login"
+  ? "/listings/create"
+  : "/login"
                 )
               }
               className="

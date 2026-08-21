@@ -13,9 +13,7 @@ type Props = {
   }>;
 };
 
-export default async function CategoryPage({
-  params,
-}: Props) {
+export default async function CategoryPage({ params }: Props) {
   const { slug } = await params;
 
   const data = await getCategoryListings(slug);
@@ -26,7 +24,6 @@ export default async function CategoryPage({
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
-
       <Breadcrumbs
         items={[
           {
@@ -44,7 +41,6 @@ export default async function CategoryPage({
       />
 
       {/* HERO */}
-
       <section
         className="
           mt-8
@@ -59,7 +55,6 @@ export default async function CategoryPage({
         "
       >
         <div className="max-w-3xl">
-
           <span
             className="
               inline-flex
@@ -108,21 +103,17 @@ export default async function CategoryPage({
             "
           >
             <div>
-              <p className="text-sm font-medium">
-                Active Listings
-              </p>
+              <p className="text-sm font-medium">Active Listings</p>
 
               <p className="text-3xl font-black">
                 {data.pagination.total}
               </p>
             </div>
           </div>
-
         </div>
       </section>
 
       {/* HEADER */}
-
       <div
         className="
           mt-10
@@ -139,7 +130,6 @@ export default async function CategoryPage({
         "
       >
         <div>
-
           <h2
             className="
               text-2xl
@@ -153,11 +143,10 @@ export default async function CategoryPage({
             {data.pagination.total} listing
             {data.pagination.total !== 1 && "s"} found
           </p>
-
         </div>
 
         <Link
-          href="/"
+          href="/categories"
           className="
             rounded-xl
             bg-orange-600
@@ -171,15 +160,10 @@ export default async function CategoryPage({
         >
           Browse All Categories
         </Link>
-
       </div>
 
       {/* LISTINGS */}
-
-            {/* LISTINGS */}
-
       {data.items.length === 0 ? (
-
         <div
           className="
             mt-12
@@ -198,9 +182,7 @@ export default async function CategoryPage({
             There are currently no active listings in this category.
           </p>
         </div>
-
       ) : (
-
         <div
           className="
             mt-10
@@ -217,54 +199,9 @@ export default async function CategoryPage({
             />
           ))}
         </div>
-
       )}
 
-<CategoryPagination
-  pagination={data.pagination}
-/>
-      {/* PAGINATION */}
-
-      {data.pagination.totalPages > 1 && (
-
-        <div
-          className="
-            mt-16
-            flex
-            justify-center
-            gap-3
-          "
-        >
-          {Array.from({
-            length: data.pagination.totalPages,
-          }).map((_, index) => (
-            <Link
-              key={index}
-              href={`?page=${index + 1}`}
-              className={`
-                flex
-                h-12
-                w-12
-                items-center
-                justify-center
-                rounded-xl
-                border
-                font-semibold
-                transition
-                ${
-                  data.pagination.page === index + 1
-                    ? "bg-orange-600 text-white border-orange-600"
-                    : "hover:bg-orange-50"
-                }
-              `}
-            >
-              {index + 1}
-            </Link>
-          ))}
-        </div>
-
-      )}
-
+      <CategoryPagination pagination={data.pagination} />
     </main>
   );
 }

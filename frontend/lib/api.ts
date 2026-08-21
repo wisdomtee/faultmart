@@ -152,6 +152,50 @@ export async function getMyListings() {
 
 /**
  * =========================================================
+ * AI LISTING ASSISTANT
+ * =========================================================
+ */
+
+export interface ListingAssistantPayload {
+  title?: string;
+  description?: string;
+  category?: string;
+  condition?: string;
+  faultSeverity?: string;
+  faultDescription?: string;
+}
+
+export interface ListingAssistantResult {
+  suggestedTitle: string;
+  improvedDescription: string;
+  suggestedFaultSeverity:
+    | "MINOR"
+    | "MODERATE"
+    | "MAJOR"
+    | "CRITICAL"
+    | null;
+  suggestions: string[];
+}
+
+/**
+ * Generate AI assistance for a listing
+ *
+ * Protected route:
+ * POST /api/ai/listing-assistant
+ */
+export async function generateListingAssistant(
+  payload: ListingAssistantPayload
+): Promise<ListingAssistantResult> {
+  const { data } = await api.post(
+    "/api/ai/listing-assistant",
+    payload
+  );
+
+  return data.data;
+}
+
+/**
+ * =========================================================
  * CREATE LISTING
  * =========================================================
  */
@@ -703,6 +747,72 @@ export async function rejectListing(
 
 /**
  * =========================================================
+ * ADMIN LISTINGS
+ * =========================================================
+ */
+
+/**
+ * Get admin listings
+ */
+export async function getAdminListings(
+  params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }
+) {
+  const { data } = await api.get(
+    "/api/admin/listings",
+    {
+      params,
+    }
+  );
+
+  return data.data;
+}
+
+/**
+ * =========================================================
+ * ADMIN ORDERS
+ * =========================================================
+ */
+
+/**
+ * Get admin orders
+ */
+export async function getAdminOrders(
+  params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }
+) {
+  const { data } = await api.get(
+    "/api/admin/orders",
+    {
+      params,
+    }
+  );
+
+  return data.data;
+}
+
+/**
+ * Get a single admin order
+ */
+export async function getAdminOrderById(
+  id: string
+) {
+  const { data } = await api.get(
+    `/api/admin/orders/${id}`
+  );
+
+  return data.data;
+}
+/**
+ * =========================================================
  * ADMIN REPORTS
  * =========================================================
  */
@@ -727,6 +837,26 @@ export async function getAdminReports(
   return data.data;
 }
 
+/**
+ * Update admin report status
+ */
+export async function updateAdminReportStatus(
+  id: string,
+  status:
+    | "PENDING"
+    | "UNDER_REVIEW"
+    | "ACTION_TAKEN"
+    | "DISMISSED"
+) {
+  const { data } = await api.patch(
+    `/api/admin/reports/${id}/status`,
+    {
+      status,
+    }
+  );
+
+  return data.data;
+}
 /**
  * Create or get an existing conversation
  */
@@ -777,6 +907,78 @@ export async function getMessages(
 ) {
   const { data } = await api.get(
     `/api/messages/${conversationId}`
+  );
+
+  return data.data;
+}
+
+/**
+ * =========================================================
+ * TRUST & SAFETY / REPORTS
+ * =========================================================
+ */
+
+/**
+ * Create a report
+ *
+ * Protected route:
+ * POST /api/reports
+ */
+export async function createReport(data: {
+  listingId?: string;
+  reportedUserId?: string;
+  reason: string;
+  description?: string;
+}) {
+  const { data: response } = await api.post(
+    "/api/reports",
+    data
+  );
+
+  return response.data;
+}
+
+/**
+ * Get reports submitted by the current user
+ *
+ * Protected route:
+ * GET /api/reports/me
+ */
+export async function getMyReports() {
+  const { data } = await api.get(
+    "/api/reports/me"
+  );
+
+  return data.data;
+}
+
+/**
+ * Get a single report submitted by the current user
+ *
+ * Protected route:
+ * GET /api/reports/:id
+ */
+export async function getReportById(
+  reportId: string
+) {
+  const { data } = await api.get(
+    `/api/reports/${reportId}`
+  );
+
+  return data.data;
+}
+
+/**
+ * Delete a report
+ *
+ * Protected route:
+ * DELETE /api/reports/:id
+ */
+export async function deleteReport(
+  reportId: string
+) {
+  const { data } = await api.delete(
+    `/api/reports/${reportId}`
   );
 
   return data.data;
@@ -927,4 +1129,351 @@ export async function deleteMessage(
   );
 
   return data.data;
+}
+
+/**
+ * =========================================================
+ * ORDERS
+ * =========================================================
+ */
+
+/**
+ * Get current user's orders
+ *
+ * Protected route:
+ * GET /api/orders
+ *
+ * Returns orders where the authenticated user
+ * is either the buyer or seller.
+ */
+export async function getMyOrders() {
+  const { data } = await api.get("/api/orders");
+
+  return data.data;
+}
+
+/**
+ * Create a review for a completed order
+ *
+ * Protected route:
+ * POST /api/reviews
+ */
+export interface CreateReviewPayload {
+  orderId: string;
+  rating: number;
+  comment?: string;
+  type: "BUYER_TO_SELLER" | "SELLER_TO_BUYER";
+}
+
+export async function createReview(
+  payload: CreateReviewPayload
+) {
+  const { data } = await api.post(
+    "/api/reviews",
+    payload
+  );
+
+  return data.data;
+}
+
+/**
+ * Get reviews received by a user
+ *
+ * GET /api/reviews/user/:userId
+ */
+export async function getUserReviews(
+  userId: string,
+  page = 1,
+  limit = 20
+) {
+  const { data } = await api.get(
+    `/api/reviews/user/${userId}`,
+    {
+      params: {
+        page,
+        limit,
+      },
+    }
+  );
+
+  return data.data;
+}
+
+/**
+ * Get rating summary for a user
+ *
+ * GET /api/reviews/summary/:userId
+ */
+export async function getRatingSummary(
+  userId: string
+) {
+  const { data } = await api.get(
+    `/api/reviews/summary/${userId}`
+  );
+
+  return data.data;
+}
+
+/**
+ * Update an existing review
+ *
+ * Protected route:
+ * PATCH /api/reviews/:id
+ */
+export interface UpdateReviewPayload {
+  rating?: number;
+  comment?: string;
+}
+
+export async function updateReview(
+  reviewId: string,
+  payload: UpdateReviewPayload
+) {
+  const { data } = await api.patch(
+    `/api/reviews/${reviewId}`,
+    payload
+  );
+
+  return data.data;
+}
+
+/**
+ * Delete an existing review
+ *
+ * Protected route:
+ * DELETE /api/reviews/:id
+ */
+export async function deleteReview(
+  reviewId: string
+) {
+  const { data } = await api.delete(
+    `/api/reviews/${reviewId}`
+  );
+
+  return data.data;
+}
+/**
+ * Get a single order
+ *
+ * Protected route:
+ * GET /api/orders/:id
+ */
+export async function getOrderById(orderId: string) {
+  const { data } = await api.get(
+    `/api/orders/${orderId}`
+  );
+
+  return data.data;
+}
+
+/**
+ * Confirm that the buyer has received and inspected
+ * the item or service.
+ *
+ * Protected route:
+ * PATCH /api/orders/:id/confirm-receipt
+ */
+export async function confirmOrderReceipt(orderId: string) {
+  const { data } = await api.patch(
+    `/api/orders/${orderId}/confirm-receipt`
+  );
+
+  return data.data;
+}
+/**
+ * Create an order
+ *
+ * Protected route:
+ * POST /api/orders
+ */
+export async function createOrder(data: {
+  listingId: string;
+  offerId?: string;
+  shippingAddress?: string;
+}) {
+  const response = await api.post(
+    "/api/orders",
+    data
+  );
+
+  return response.data.data;
+}
+
+/**
+ * Update order status
+ *
+ * Protected route:
+ * PATCH /api/orders/:id/status
+ */
+export async function updateOrderStatus(
+  orderId: string,
+  status: string
+) {
+  const { data } = await api.patch(
+    `/api/orders/${orderId}/status`,
+    {
+      status,
+    }
+  );
+
+  return data.data;
+}
+
+/**
+ * Cancel an order
+ *
+ * Protected route:
+ * PATCH /api/orders/:id/cancel
+ */
+export async function cancelOrder(
+  orderId: string
+) {
+  const { data } = await api.patch(
+    `/api/orders/${orderId}/cancel`
+  );
+
+  return data.data;
+}
+
+/**
+ * Buyer confirms receipt of an order
+ *
+ * Protected route:
+ * PATCH /api/orders/:id/confirm-receipt
+ */
+export async function confirmReceipt(orderId: string) {
+  const { data } = await api.patch(
+    `/api/orders/${orderId}/confirm-receipt`
+  );
+
+  return data.data;
+}
+
+/**
+ * =========================================================
+ * CAREERS
+ * =========================================================
+ */
+
+export async function getCareers(params?: {
+  search?: string;
+  department?: string;
+  employmentType?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const searchParams = new URLSearchParams();
+
+  if (params?.search) {
+    searchParams.set("search", params.search);
+  }
+
+  if (params?.department) {
+    searchParams.set("department", params.department);
+  }
+
+  if (params?.employmentType) {
+    searchParams.set("employmentType", params.employmentType);
+  }
+
+  if (params?.page) {
+    searchParams.set("page", String(params.page));
+  }
+
+  if (params?.limit) {
+    searchParams.set("limit", String(params.limit));
+  }
+
+  const query = searchParams.toString();
+
+  const res = await fetch(
+    `${API_URL}/api/careers/jobs${query ? `?${query}` : ""}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Careers fetch failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  return data.data;
+}
+
+export async function getCareerBySlug(slug: string) {
+  const res = await fetch(
+    `${API_URL}/api/careers/jobs/${slug}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Job fetch failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  return data.data;
+}
+
+/**
+ * =========================================================
+ * CURRENT USER PROFILE
+ * =========================================================
+ */
+
+/**
+ * Get current user's profile
+ */
+export async function getMyProfile() {
+  const { data } = await api.get("/api/users/me");
+
+  return data.user;
+}
+
+/**
+ * Update current user's profile
+ */
+export async function updateMyProfile(profileData: {
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  phone?: string;
+  gender?: string | null;
+  profileImage?: string | null;
+  bio?: string | null;
+}) {
+  const { data } = await api.patch(
+    "/api/users/me",
+    profileData
+  );
+
+  return data.user;
+}
+
+/**
+ * Change current user's password
+ */
+export async function changeMyPassword(data: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  const response = await api.patch(
+    "/api/users/change-password",
+    data
+  );
+
+  return response.data;
+}
+
+/**
+ * Delete current user's account
+ */
+export async function deleteMyAccount() {
+  const { data } = await api.delete("/api/users/me");
+
+  return data;
 }

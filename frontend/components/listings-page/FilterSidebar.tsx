@@ -26,7 +26,6 @@ export default function FilterSidebar({
   const router = useRouter();
 
   const searchParams = useSearchParams();
-    useSearchParams();
 
 
 

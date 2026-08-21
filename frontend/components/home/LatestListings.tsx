@@ -170,7 +170,7 @@ export default function LatestListings({
 
 
             <Link
-              href="/listings?sort=latest"
+              href="/listings"
               className="
                 group
                 inline-flex
@@ -308,7 +308,7 @@ export default function LatestListings({
             "
           >
 
-            <Link href="/listings?sort=latest">
+            <Link href="/listings">
 
               <Button
                 size="lg"
