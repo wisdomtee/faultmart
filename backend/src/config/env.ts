@@ -9,12 +9,13 @@ export const env = {
 
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY!,
 
-  JWT_SECRET: process.env.JWT_SECRET!,
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET!,
 
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET!,
 
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "1d",
+  ACCESS_TOKEN_EXPIRES:
+    process.env.ACCESS_TOKEN_EXPIRES || "15m",
 
-  JWT_REFRESH_EXPIRES_IN:
-    process.env.JWT_REFRESH_EXPIRES_IN || "30d",
+  REFRESH_TOKEN_EXPIRES:
+    process.env.REFRESH_TOKEN_EXPIRES || "30d",
 };
