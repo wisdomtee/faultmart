@@ -25,6 +25,41 @@ import {
 } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = (
+      error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      }
+    ).response;
+
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
 interface Props {
   phone?: string | null;
   listingId: string;
@@ -156,15 +191,16 @@ async function handleSubmitPurchase() {
     router.push(
       `/dashboard/orders?order=${order.id}`
     );
-  } catch (error: any) {
-    console.error(
-      "FAILED TO CREATE ORDER:",
-      error?.response?.data || error
-    );
+  } catch (error: unknown) {
+  console.error(
+    "FAILED TO CREATE ORDER:",
+    error
+  );
 
-    const message =
-      error?.response?.data?.message ||
-      "Unable to complete your purchase.";
+  const message = getErrorMessage(
+    error,
+    "Unable to create order. Please try again."
+  );
 
     toast.error(message);
   } finally {
@@ -315,15 +351,16 @@ setOfferDisclaimerAccepted(false);
        * Close modal
        */
       setShowOfferModal(false);
-    } catch (error: any) {
-      console.error(
-        "FAILED TO SUBMIT OFFER:",
-        error
-      );
+    } catch (error: unknown) {
+  console.error(
+    "FAILED TO CREATE ORDER:",
+    error
+  );
 
-      const message =
-        error?.response?.data?.message ||
-        "Unable to submit offer.";
+  const message = getErrorMessage(
+    error,
+    "Unable to create order. Please try again."
+  );
 
       toast.error(message);
     } finally {
@@ -395,15 +432,16 @@ setOfferDisclaimerAccepted(false);
       router.push(
         `/messages/${conversation.id}`
       );
-        } catch (error: any) {
-      console.error(
-        "FAILED TO CREATE CONVERSATION:",
-        error?.response?.data || error
-      );
+        } catch (error: unknown) {
+  console.error(
+    "FAILED TO CREATE ORDER:",
+    error
+  );
 
-      const message =
-        error?.response?.data?.message ||
-        "Unable to start conversation.";
+  const message = getErrorMessage(
+    error,
+    "Unable to create order. Please try again."
+  );
 
       toast.error(message);
     } finally {
@@ -504,15 +542,16 @@ setOfferDisclaimerAccepted(false);
       setReportReason("");
       setReportDescription("");
       setShowReportModal(false);
-    } catch (error: any) {
-      console.error(
-        "FAILED TO SUBMIT REPORT:",
-        error?.response?.data || error
-      );
+    } catch (error: unknown) {
+  console.error(
+    "FAILED TO CREATE ORDER:",
+    error
+  );
 
-      const message =
-        error?.response?.data?.message ||
-        "Unable to submit your report.";
+  const message = getErrorMessage(
+    error,
+    "Unable to create order. Please try again."
+  );
 
       toast.error(message);
     } finally {
@@ -761,7 +800,7 @@ setOfferDisclaimerAccepted(false);
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  Enter the amount you'd like to offer.
+                  Enter the amount you&apos;d like to offer.
                 </p>
               </div>
 

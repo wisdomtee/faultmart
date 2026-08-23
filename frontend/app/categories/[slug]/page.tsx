@@ -6,6 +6,7 @@ import { getCategoryListings } from "@/lib/api";
 import ListingCard from "@/components/listings/ListingCard";
 import Breadcrumbs from "@/components/listings/Breadcrumbs";
 import CategoryPagination from "@/components/categories/CategoryPagination";
+import { Listing } from "@/types/listing";
 
 type Props = {
   params: Promise<{
@@ -192,7 +193,7 @@ export default async function CategoryPage({ params }: Props) {
             xl:grid-cols-4
           "
         >
-          {data.items.map((listing: any) => (
+          {data.items.map((listing: Listing) => (
             <ListingCard
               key={listing.id}
               listing={listing}

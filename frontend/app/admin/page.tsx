@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AxiosError } from "axios";
 import {
   Users,
   Car,
@@ -96,25 +97,35 @@ export default function AdminDashboardPage() {
       const data = await getAdminDashboard();
 
       setDashboard(data);
-    } catch (error: any) {
-      console.error(
-        "ADMIN DASHBOARD ERROR:",
-        error
-      );
+    } catch (error: unknown) {
+  console.error(
+    "ADMIN DASHBOARD ERROR:",
+    error
+  );
 
-      setError(
-        error?.response?.data?.message ||
-          "Failed to load admin dashboard."
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+  const message =
+    error instanceof AxiosError
+      ? error.response?.data?.message
+      : error instanceof Error
+        ? error.message
+        : undefined;
+
+  setError(
+    message ||
+      "Failed to load admin dashboard."
+  );
+} finally {
+  setLoading(false);
+}
   };
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+  const timer = window.setTimeout(() => {
+    void loadDashboard();
+  }, 0);
+
+  return () => window.clearTimeout(timer);
+}, []);
 
   if (loading) {
     return (

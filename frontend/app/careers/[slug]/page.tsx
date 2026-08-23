@@ -112,9 +112,9 @@ export default async function CareerDetailsPage({ params }: Props) {
               </h2>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Submit your application and let the FaultMart team know why
-                you're a great fit.
-              </p>
+  Submit your application and let the FaultMart team know why
+  you&apos;re a great fit.
+</p>
 
               <Link
                 href={`/careers/${job.slug}/apply`}

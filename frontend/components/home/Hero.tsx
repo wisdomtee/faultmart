@@ -115,7 +115,7 @@ export default function Hero() {
             >
               <Wrench className="h-4 w-4" />
 
-              Africa's Repairable Goods Marketplace
+              Africa&apos;s Repairable Goods Marketplace
             </div>
 
             {/* HEADING */}
@@ -134,7 +134,7 @@ export default function Hero() {
               <br />
 
               <span className="text-orange-500">
-                doesn't mean
+                doesn&apos;t mean
               </span>
 
               <br />

@@ -68,7 +68,7 @@ export default function ListingGrid({
               text-neutral-500
             "
           >
-            We couldn't find any products matching your search.
+            We couldn&apos;t find any products matching your search.
             Try another category or check back later for new
             repairable items.
           </p>

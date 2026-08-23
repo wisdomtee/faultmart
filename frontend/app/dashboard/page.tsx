@@ -92,6 +92,42 @@ type ActionKey =
   | "delivered"
   | "receipt";
 
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = (
+      error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      }
+    ).response;
+
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
+
 const statusConfig: Record<
   string,
   {
@@ -204,25 +240,31 @@ export default function OrdersPage() {
         : response?.data ?? [];
 
       setOrders(data as Order[]);
-    } catch (err: any) {
-      console.error("Failed to load orders:", err);
+    } catch (err: unknown) {
+  console.error("Failed to load orders:", err);
 
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to load orders."
-      );
-    } finally {
+  setError(
+    getErrorMessage(
+      err,
+      "Failed to load orders."
+    )
+  );
+} finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (currentUserId) {
-      loadOrders();
-    }
-  }, [currentUserId]);
+  if (!currentUserId) {
+    return;
+  }
 
+  const timer = window.setTimeout(() => {
+    void loadOrders();
+  }, 0);
+
+  return () => window.clearTimeout(timer);
+}, [currentUserId]);
   const getRole = (order: Order) => {
     if (!currentUserId) {
       return {
@@ -286,7 +328,7 @@ export default function OrdersPage() {
   const runAction = async (
     orderId: string,
     action: ActionKey,
-    actionFn: () => Promise<any>
+    actionFn: () => Promise<void>
   ) => {
     try {
       setActionLoading({
@@ -299,15 +341,16 @@ export default function OrdersPage() {
       await actionFn();
 
       await loadOrders();
-    } catch (err: any) {
-      console.error(`Order ${action} failed:`, err);
+    } catch (err: unknown) {
+  console.error(`Order ${action} failed:`, err);
 
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Unable to complete this action."
-      );
-    } finally {
+  setError(
+    getErrorMessage(
+      err,
+      "Unable to complete this action."
+    )
+  );
+} finally {
       setActionLoading(null);
     }
   };

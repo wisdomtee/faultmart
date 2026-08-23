@@ -257,12 +257,14 @@ export default function ListingCard({ listing }: Props) {
               "
             >
               🕒 Posted{" "}
-              {formatDistanceToNow(
-                new Date(listing.createdAt ?? Date.now()),
-                {
-                  addSuffix: true,
-                }
-              )}
+              {listing.createdAt
+  ? formatDistanceToNow(
+      new Date(listing.createdAt),
+      {
+        addSuffix: true,
+      }
+    )
+  : "Recently"}
             </div>
           </div>
 

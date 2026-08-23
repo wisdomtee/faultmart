@@ -23,7 +23,7 @@ export default function Footer() {
             <Logo dark />
 
             <p className="mt-6 max-w-md leading-7 text-neutral-400">
-              Africa's trusted marketplace for new & repairable
+              Africa&apos;s trusted marketplace for new & repairable
               vehicles, phones, electronics & appliances.
               Buy smarter, sell faster and trade with complete
               transparency.

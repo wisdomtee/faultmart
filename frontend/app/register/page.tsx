@@ -8,7 +8,44 @@ import toast from "react-hot-toast";
 import { registerUser } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = (
+      error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      }
+    ).response;
+
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
+
 export default function RegisterPage() {
+
   const router = useRouter();
 
   const setAuth = useAuthStore(
@@ -138,16 +175,16 @@ export default function RegisterPage() {
       );
 
       router.push("/");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(
         "REGISTRATION FAILED:",
         err
       );
 
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Unable to create your account.";
+      const message = getErrorMessage(
+  err,
+  "Unable to create your account."
+);
 
       setError(message);
       toast.error(message);

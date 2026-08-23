@@ -65,9 +65,9 @@ export default async function CareersPage() {
             </h3>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
-              We don't have any open positions at the moment. Please check
-              back later for new opportunities at FaultMart.
-            </p>
+  We don&apos;t have any open positions at the moment. Please check
+  back later for new opportunities at FaultMart.
+</p>
 
             <Link
               href="/"
@@ -79,7 +79,7 @@ export default async function CareersPage() {
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2">
-            {jobs.map((job: any) => (
+            {jobs.map((job) => (
               <Link
                 key={job.id}
                 href={`/careers/${job.slug}`}

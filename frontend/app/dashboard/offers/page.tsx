@@ -67,6 +67,42 @@ function formatDate(value?: string) {
   });
 }
 
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = (
+      error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      }
+    ).response;
+
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
+
 function formatStatus(status?: string) {
   if (!status) return "Unknown";
 
@@ -130,8 +166,12 @@ export default function SellerOffersPage() {
   }
 
   useEffect(() => {
-    loadOffers();
-  }, []);
+  const timer = window.setTimeout(() => {
+    void loadOffers();
+  }, 0);
+
+  return () => window.clearTimeout(timer);
+}, []);
 
   /*
    * Open the acceptance modal.
@@ -171,16 +211,18 @@ export default function SellerOffersPage() {
       setSellerDisclaimerAccepted(false);
 
       await loadOffers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(
         "FAILED TO ACCEPT OFFER:",
         err
       );
 
       toast.error(
-        err?.response?.data?.message ||
-          "Unable to accept this offer."
-      );
+  getErrorMessage(
+    err,
+    "Unable to accept this offer."
+  )
+);
     } finally {
       setProcessingId(null);
     }
@@ -206,16 +248,18 @@ export default function SellerOffersPage() {
       toast.success("Offer rejected.");
 
       await loadOffers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(
         "FAILED TO REJECT OFFER:",
         err
       );
 
       toast.error(
-        err?.response?.data?.message ||
-          "Unable to reject this offer."
-      );
+  getErrorMessage(
+    err,
+    "Unable to reject this offer."
+  )
+);
     } finally {
       setProcessingId(null);
     }
@@ -485,6 +529,7 @@ export default function SellerOffersPage() {
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(
                           offer.status
                         )}`}
+                        
                       >
                         {formatStatus(
                           offer.status

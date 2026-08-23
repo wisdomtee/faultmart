@@ -188,8 +188,12 @@ const [reviewedOrderIds, setReviewedOrderIds] =
   }
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+  const timer = window.setTimeout(() => {
+    void loadOrders();
+  }, 0);
+
+  return () => window.clearTimeout(timer);
+}, []);
 
   async function handleStatusUpdate(
     orderId: string,

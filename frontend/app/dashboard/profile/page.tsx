@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { AxiosError } from "axios";
+import { useAuthStore } from "@/store/auth-store";
 import {
   User,
   Mail,
@@ -22,7 +24,26 @@ import {
   deleteMyAccount,
 } from "@/lib/api";
 
-import { useAuthStore } from "@/store/auth-store";
+import { useRouter } from "next/navigation";
+
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (error instanceof AxiosError) {
+    return (
+      error.response?.data?.message ||
+      error.message ||
+      fallback
+    );
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+
+  return fallback;
+}
 
 type Profile = {
   id: string;
@@ -40,7 +61,9 @@ type Profile = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user, setAuth, accessToken } = useAuthStore();
+  
 
   const [profile, setProfile] = useState<Profile | null>(null);
 
@@ -69,13 +92,20 @@ const [deletingAccount, setDeletingAccount] = useState(false);
 const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 const [deleteError, setDeleteError] = useState("");
 
-  useEffect(() => {
+    useEffect(() => {
+    if (!accessToken) {
+      return;
+    }
+
+    let cancelled = false;
+
     async function loadProfile() {
       try {
-        setLoading(true);
-        setError("");
-
         const data = await getMyProfile();
+
+        if (cancelled) {
+          return;
+        }
 
         setProfile(data);
 
@@ -85,23 +115,30 @@ const [deleteError, setDeleteError] = useState("");
         setPhone(data.phone ?? "");
         setGender(data.gender ?? "");
         setBio(data.bio ?? "");
-      } catch (err: any) {
+        setError("");
+      } catch (err: unknown) {
+        if (cancelled) {
+          return;
+        }
+
         setError(
-          err?.response?.data?.message ||
-            err?.message ||
+          getErrorMessage(
+            err,
             "Failed to load your profile."
+          )
         );
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
-    if (accessToken) {
-      loadProfile();
-    } else {
-      setLoading(false);
-      setError("You must be logged in to view your profile.");
-    }
+    void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -146,13 +183,14 @@ const [deleteError, setDeleteError] = useState("");
       window.setTimeout(() => {
         setSuccess("");
       }, 4000);
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to update your profile."
-      );
-    } finally {
+    } catch (err: unknown) {
+  setError(
+    getErrorMessage(
+      err,
+      "Failed to update your profile."
+    )
+  );
+} finally {
       setSaving(false);
     }
   }
@@ -198,13 +236,14 @@ const [deleteError, setDeleteError] = useState("");
     window.setTimeout(() => {
       setPasswordSuccess("");
     }, 4000);
-  } catch (err: any) {
-    setPasswordError(
-      err?.response?.data?.message ||
-        err?.message ||
-        "Failed to change your password."
-    );
-  } finally {
+  } catch (err: unknown) {
+  setPasswordError(
+    getErrorMessage(
+      err,
+      "Failed to change your password."
+    )
+  );
+} finally {
     setChangingPassword(false);
   }
 }
@@ -227,18 +266,19 @@ async function handleDeleteAccount() {
       ""
     );
 
-    window.location.href = "/";
-  } catch (err: any) {
-    console.error("Delete account failed:", err);
+    router.push("/");
+  } catch (err: unknown) {
+  console.error("Delete account failed:", err);
 
-    setDeleteError(
-      err?.response?.data?.message ||
-        err?.message ||
-        "Failed to delete your account."
-    );
+  setDeleteError(
+    getErrorMessage(
+      err,
+      "Failed to delete your account."
+    )
+  );
 
-    setDeletingAccount(false);
-  }
+  setDeletingAccount(false);
+}
 }
 
   if (loading) {

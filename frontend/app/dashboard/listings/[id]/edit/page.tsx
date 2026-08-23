@@ -35,6 +35,42 @@ interface ExistingImage {
   position?: number;
 }
 
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = (
+      error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      }
+    ).response;
+
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
+
 const CONDITIONS = [
   { value: "FAULTY", label: "Faulty" },
   { value: "USED", label: "Used" },
@@ -128,7 +164,7 @@ export default function EditListingPage() {
             ? result
             : result?.items ?? []
         );
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(
           "Categories Error:",
           err
@@ -241,16 +277,16 @@ export default function EditListingPage() {
                 )
             : []
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(
           "Load Listing Error:",
           err
         );
 
-        const message =
-          err?.response?.data?.message ||
-          err?.message ||
-          "Unable to load listing.";
+        const message = getErrorMessage(
+  err,
+  "Unable to load listing."
+);
 
         setError(message);
       } finally {
@@ -487,19 +523,19 @@ export default function EditListingPage() {
       router.push(
         "/dashboard/listings"
       );
-    } catch (err: any) {
-      console.error(
-        "Update Listing Error:",
-        err
-      );
+    } catch (err: unknown) {
+  console.error(
+    "Update Listing Error:",
+    err
+  );
 
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Unable to update listing. Please try again.";
+  const message = getErrorMessage(
+    err,
+    "Unable to update listing. Please try again."
+  );
 
-      setError(message);
-    } finally {
+  setError(message);
+} finally {
       setSubmitting(false);
     }
   }

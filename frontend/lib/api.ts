@@ -1355,13 +1355,34 @@ export async function confirmReceipt(orderId: string) {
  * =========================================================
  */
 
+export interface CareerJob {
+  id: string;
+  slug: string;
+  title: string;
+  department: string;
+  location: string;
+  employmentType: string;
+  salaryRange?: string | null;
+  description: string;
+  responsibilities: string;
+  requirements: string;
+}
+
 export async function getCareers(params?: {
   search?: string;
   department?: string;
   employmentType?: string;
   page?: number;
   limit?: number;
-}) {
+}): Promise<{
+  jobs: CareerJob[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
   const searchParams = new URLSearchParams();
 
   if (params?.search) {
@@ -1402,7 +1423,9 @@ export async function getCareers(params?: {
   return data.data;
 }
 
-export async function getCareerBySlug(slug: string) {
+export async function getCareerBySlug(
+  slug: string
+): Promise<CareerJob> {
   const res = await fetch(
     `${API_URL}/api/careers/jobs/${slug}`,
     {
@@ -1418,7 +1441,6 @@ export async function getCareerBySlug(slug: string) {
 
   return data.data;
 }
-
 /**
  * =========================================================
  * CURRENT USER PROFILE

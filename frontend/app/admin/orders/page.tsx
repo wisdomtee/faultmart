@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { AxiosError } from "axios";
 import {
   Search,
   ShoppingBag,
@@ -110,21 +111,61 @@ export default function AdminOrdersPage() {
 
       setOrders(response.data);
       setPagination(response.pagination);
-    } catch (err: any) {
-      console.error("ADMIN ORDERS ERROR:", err);
+    } catch (err: unknown) {
+  console.error("ADMIN ORDERS ERROR:", err);
 
-      setError(
-        err?.response?.data?.message ||
-          "Failed to load orders."
-      );
-    } finally {
+  const message =
+    err instanceof AxiosError
+      ? err.response?.data?.message
+      : err instanceof Error
+        ? err.message
+        : undefined;
+
+  setError(
+    message || "Failed to load orders."
+  );
+} finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadOrders();
-  }, [page, status]);
+  let cancelled = false;
+
+  async function fetchOrders() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await getAdminOrders({
+        page,
+        limit: 10,
+        search: search.trim() || undefined,
+        status: status || undefined,
+      });
+
+      if (cancelled) return;
+
+      setOrders(response.data);
+      setPagination(response.pagination);
+    } catch (error: unknown) {
+      if (cancelled) return;
+
+      console.error("ADMIN ORDERS ERROR:", error);
+      setError("Failed to load orders.");
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
+  }
+
+  void fetchOrders();
+
+  return () => {
+    cancelled = true;
+  };
+}, [page, status]);
 
   function handleSearchSubmit(
     event: React.FormEvent

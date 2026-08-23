@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AxiosError } from "axios";
 import {
   AlertCircle,
   CheckCircle2,
@@ -249,59 +250,100 @@ export default function AdminListingsPage() {
 
   const limit = 20;
 
-  async function loadListings(
-    showRefresh = false
-  ) {
-    try {
-      if (showRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+  async function loadListings(showRefresh = false) {
+  try {
+    if (showRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
 
+    setError("");
+
+    const response = await getAdminListings({
+      page,
+      limit,
+      ...(search.trim()
+        ? {
+            search: search.trim(),
+          }
+        : {}),
+      ...(statusFilter !== "ALL"
+        ? {
+            status: statusFilter,
+          }
+        : {}),
+    });
+
+    setListings(response.data || []);
+
+    setPagination(response.pagination || null);
+  } catch (error: unknown) {
+    console.error("ADMIN LISTINGS ERROR:", error);
+
+    const message =
+      typeof error === "object" &&
+      error !== null &&
+      "response" in error &&
+      typeof error.response === "object" &&
+      error.response !== null &&
+      "data" in error.response &&
+      typeof error.response.data === "object" &&
+      error.response.data !== null &&
+      "message" in error.response.data &&
+      typeof error.response.data.message === "string"
+        ? error.response.data.message
+        : "Failed to load listings.";
+
+    setError(message);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+}
+
+useEffect(() => {
+  let cancelled = false;
+
+  async function fetchListings() {
+    try {
+      setLoading(true);
       setError("");
 
-      const response =
-        await getAdminListings({
-          page,
-          limit,
-          ...(search.trim()
-            ? {
-                search: search.trim(),
-              }
-            : {}),
-          ...(statusFilter !== "ALL"
-            ? {
-                status: statusFilter,
-              }
-            : {}),
-        });
+      const response = await getAdminListings({
+        page,
+        limit,
+        ...(search.trim()
+          ? { search: search.trim() }
+          : {}),
+        ...(statusFilter !== "ALL"
+          ? { status: statusFilter }
+          : {}),
+      });
+
+      if (cancelled) return;
 
       setListings(response.data || []);
+      setPagination(response.pagination || null);
+    } catch (error: unknown) {
+      if (cancelled) return;
 
-      setPagination(
-        response.pagination || null
-      );
-    } catch (error: any) {
-      console.error(
-        "ADMIN LISTINGS ERROR:",
-        error
-      );
+      console.error("ADMIN LISTINGS ERROR:", error);
 
-      setError(
-        error?.response?.data?.message ||
-          "Failed to load listings."
-      );
+      setError("Failed to load listings.");
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!cancelled) {
+        setLoading(false);
+      }
     }
   }
 
-  useEffect(() => {
-    loadListings();
-  }, [page, search, statusFilter]);
+  void fetchListings();
 
+  return () => {
+    cancelled = true;
+  };
+}, [page, search, statusFilter]);
   function handleSearchSubmit(
     event: React.FormEvent
   ) {
@@ -339,16 +381,23 @@ export default function AdminListingsPage() {
             : listing
         )
       );
-    } catch (error: any) {
-      console.error(
-        "APPROVE LISTING ERROR:",
-        error
-      );
+    } catch (error: unknown) {
+  console.error(
+    "REJECT LISTING ERROR:",
+    error
+  );
 
-      setError(
-        error?.response?.data?.message ||
-          "Failed to approve listing."
-      );
+  const message =
+    error instanceof AxiosError
+      ? error.response?.data?.message
+      : error instanceof Error
+        ? error.message
+        : undefined;
+
+  setError(
+    message ||
+      "Failed to reject listing."
+  );
     } finally {
       setUpdatingId(null);
     }
@@ -375,16 +424,23 @@ export default function AdminListingsPage() {
             : listing
         )
       );
-    } catch (error: any) {
-      console.error(
-        "REJECT LISTING ERROR:",
-        error
-      );
+    } catch (error: unknown) {
+  console.error(
+    "REJECT LISTING ERROR:",
+    error
+  );
 
-      setError(
-        error?.response?.data?.message ||
-          "Failed to reject listing."
-      );
+  const message =
+    error instanceof AxiosError
+      ? error.response?.data?.message
+      : error instanceof Error
+        ? error.message
+        : undefined;
+
+  setError(
+    message ||
+      "Failed to reject listing."
+  );
     } finally {
       setUpdatingId(null);
     }

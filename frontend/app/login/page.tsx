@@ -7,6 +7,42 @@ import Link from "next/link";
 import { loginUser } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = (
+      error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      }
+    ).response;
+
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -80,18 +116,18 @@ export default function LoginPage() {
       );
 
       router.push("/");
-    } catch (err: any) {
-      console.error(
-        "LOGIN FAILED:",
-        err
-      );
+    } catch (err: unknown) {
+  console.error(
+    "LOGIN FAILED:",
+    err
+  );
 
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Unable to log in. Please check your email and password.";
+  const message = getErrorMessage(
+    err,
+    "Unable to log in. Please check your email and password."
+  );
 
-      setError(message);
+  setError(message);
     } finally {
       setLoading(false);
     }
@@ -165,7 +201,7 @@ export default function LoginPage() {
 
       {/* REGISTER LINK */}
       <div className="mt-6 text-center text-sm text-gray-500">
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link
           href="/register"
           className="font-semibold text-orange-600 hover:text-orange-700"

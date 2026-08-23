@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AxiosError } from "axios";
 import {
   Search,
   Users,
@@ -74,21 +75,32 @@ export default function AdminUsersPage() {
 
       setUsers(response.data);
       setPagination(response.pagination);
-    } catch (err: any) {
-      console.error("ADMIN USERS ERROR:", err);
+    } catch (err: unknown) {
+  console.error("ADMIN USERS ERROR:", err);
 
-      setError(
-        err?.response?.data?.message ||
-          "Failed to load users."
-      );
+  const message =
+    err instanceof AxiosError
+      ? err.response?.data?.message
+      : err instanceof Error
+        ? err.message
+        : undefined;
+
+  setError(
+    message ||
+      "Failed to load users."
+  );
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadUsers();
-  }, [page, status]);
+  const timer = window.setTimeout(() => {
+    void loadUsers();
+  }, 0);
+
+  return () => window.clearTimeout(timer);
+}, [page, status]);
 
   function handleSearchSubmit(
     event: React.FormEvent
@@ -113,17 +125,24 @@ export default function AdminUsersPage() {
       );
 
       await loadUsers();
-    } catch (err: any) {
-      console.error(
-        "UPDATE USER STATUS ERROR:",
-        err
-      );
+    } catch (err: unknown) {
+  console.error(
+    "UPDATE USER STATUS ERROR:",
+    err
+  );
 
-      setError(
-        err?.response?.data?.message ||
-          "Failed to update user status."
-      );
-    } finally {
+  const message =
+    err instanceof AxiosError
+      ? err.response?.data?.message
+      : err instanceof Error
+        ? err.message
+        : undefined;
+
+  setError(
+    message ||
+      "Failed to update user status."
+  );
+} finally {
       setUpdatingUserId(null);
     }
   }

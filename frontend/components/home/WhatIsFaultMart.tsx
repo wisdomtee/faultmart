@@ -66,7 +66,7 @@ export default function WhatIsFaultMart() {
     sm:text-5xl
   "
 >
-  Broken doesn't mean{" "}
+  Broken doesn&apos;t mean{" "}
   <span className="text-orange-600">
     worthless.
   </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AxiosError } from "axios";
 import {
   AlertCircle,
   CheckCircle2,
@@ -216,16 +217,18 @@ export default function AdminReportsPage() {
       setPagination(
         response.pagination || null
       );
-    } catch (error: any) {
-      console.error(
-        "ADMIN REPORTS ERROR:",
-        error
-      );
+    } catch (error: unknown) {
+      const message =
+  error instanceof AxiosError
+    ? error.response?.data?.message
+    : error instanceof Error
+      ? error.message
+      : undefined;
 
-      setError(
-        error?.response?.data?.message ||
-          "Failed to load reports."
-      );
+setError(
+  message ||
+    "Failed to load reports."
+);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -233,8 +236,12 @@ export default function AdminReportsPage() {
   }
 
   useEffect(() => {
-    loadReports();
-  }, [page, statusFilter]);
+  const timer = window.setTimeout(() => {
+    void loadReports();
+  }, 0);
+
+  return () => window.clearTimeout(timer);
+}, [page, statusFilter]);
 
   async function handleStatusChange(
     reportId: string,
@@ -261,16 +268,18 @@ export default function AdminReportsPage() {
             : report
         )
       );
-    } catch (error: any) {
-      console.error(
-        "UPDATE REPORT STATUS ERROR:",
-        error
-      );
+    } catch (error: unknown) {
+      const message =
+  error instanceof AxiosError
+    ? error.response?.data?.message
+    : error instanceof Error
+      ? error.message
+      : undefined;
 
-      setError(
-        error?.response?.data?.message ||
-          "Failed to update report status."
-      );
+setError(
+  message ||
+    "Failed to update report status."
+);
     } finally {
       setUpdatingId(null);
     }

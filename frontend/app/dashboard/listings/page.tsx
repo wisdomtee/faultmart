@@ -168,8 +168,12 @@ export default function MyListingsPage() {
   }
 
   useEffect(() => {
-    loadListings();
-  }, []);
+  const timer = window.setTimeout(() => {
+    void loadListings();
+  }, 0);
+
+  return () => window.clearTimeout(timer);
+}, []);
 
   async function handleDelete(
     listing: Listing

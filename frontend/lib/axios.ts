@@ -5,6 +5,10 @@ import axios, {
 
 import { useAuthStore } from "@/store/auth-store";
 
+
+type RetryableAxiosRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5001";
@@ -96,16 +100,16 @@ api.interceptors.response.use(
 
   async (error: AxiosError) => {
     const originalRequest =
-      error.config as
-        | InternalAxiosRequestConfig
-        | undefined;
+  error.config as
+    | RetryableAxiosRequestConfig
+    | undefined;
 
     if (!originalRequest) {
       return Promise.reject(error);
     }
 
     const alreadyRetried =
-      (originalRequest as any)._retry;
+  originalRequest._retry;
 
     const isRefreshRequest =
       originalRequest.url?.includes(
@@ -120,7 +124,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    (originalRequest as any)._retry = true;
+    originalRequest._retry = true;
 
     try {
       /**

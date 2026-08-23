@@ -156,7 +156,7 @@ export default async function CategoriesPage() {
             </h2>
 
             <p className="mt-2 text-neutral-500">
-              Find the type of repairable product you're looking for.
+              Find the type of repairable product you&apos;re looking for.
             </p>
           </div>
 

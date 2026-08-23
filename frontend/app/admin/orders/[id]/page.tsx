@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { AxiosError } from "axios";
 import {
   ArrowLeft,
   AlertCircle,
@@ -112,24 +113,57 @@ export default function AdminOrderDetailsPage() {
       const response = await getAdminOrderById(orderId);
 
       setOrder(response);
-    } catch (err: any) {
-      console.error("ADMIN ORDER DETAILS ERROR:", err);
+   } catch (err: unknown) {
+  console.error("ADMIN ORDER DETAILS ERROR:", err);
 
-      setError(
-        err?.response?.data?.message ||
-          "Failed to load order details."
-      );
-    } finally {
+  const message =
+    err instanceof AxiosError
+      ? err.response?.data?.message
+      : err instanceof Error
+        ? err.message
+        : undefined;
+
+  setError(
+    message || "Failed to load order details."
+  );
+} finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (orderId) {
-      loadOrder();
-    }
-  }, [orderId]);
+  if (!orderId) return;
 
+  let cancelled = false;
+
+  async function fetchOrder() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await getAdminOrderById(orderId);
+
+      if (cancelled) return;
+
+      setOrder(response);
+    } catch (error: unknown) {
+      if (cancelled) return;
+
+      console.error("ADMIN ORDER DETAILS ERROR:", error);
+      setError("Failed to load order details.");
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
+  }
+
+  void fetchOrder();
+
+  return () => {
+    cancelled = true;
+  };
+}, [orderId]);
   function formatAmount(
     amount: string | number,
     currency: string

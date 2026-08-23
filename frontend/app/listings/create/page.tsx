@@ -42,6 +42,42 @@ const FAULT_SEVERITIES = [
   { value: "CRITICAL", label: "Critical" },
 ];
 
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = (
+      error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      }
+    ).response;
+
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
+
 export default function CreateListingPage() {
   const router = useRouter();
 
@@ -85,7 +121,7 @@ const [aiResult, setAiResult] =
             ? result
             : result?.items ?? []
         );
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Categories Error:", err);
 
         setError(
@@ -213,16 +249,16 @@ const [aiResult, setAiResult] =
     });
 
     setAiResult(result);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(
       "AI Listing Assistant Error:",
       err
     );
 
-    const message =
-      err?.response?.data?.message ||
-      err?.message ||
-      "Unable to generate AI suggestions. Please try again.";
+    const message = getErrorMessage(
+  err,
+  "Unable to generate AI suggestions. Please try again."
+);
 
     setAiError(message);
   } finally {
@@ -308,17 +344,18 @@ async function handleAIListingAssistant() {
     });
 
     setAiResult(result);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(
       "AI Listing Assistant Error:",
       err
     );
 
     setAiError(
-      err?.response?.data?.message ||
-        err?.message ||
-        "Unable to generate AI suggestions. Please try again."
-    );
+  getErrorMessage(
+    err,
+    "Unable to generate AI suggestions. Please try again."
+  )
+);
   } finally {
     setAiLoading(false);
   }
@@ -408,17 +445,16 @@ if (!sellerDisclaimerAccepted) {
       } else {
         router.push("/dashboard/listings");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(
         "Create Listing Error:",
         err
       );
 
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Unable to create listing. Please try again.";
-
+      const message = getErrorMessage(
+  err,
+  "Unable to create listing. Please try again."
+);
       setError(message);
     } finally {
       setSubmitting(false);

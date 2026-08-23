@@ -18,7 +18,7 @@ export default function BuyerSeller() {
           </div>
 
           <h2 className="mt-6 text-4xl font-black sm:text-5xl">
-            Whether you're buying or selling,
+            Whether you&apos;re buying or selling,
             <span className="text-orange-500">
               {" "}FaultMart works for you.
             </span>
@@ -39,7 +39,7 @@ export default function BuyerSeller() {
             </div>
 
             <h3 className="mt-7 text-2xl font-black">
-              I'm a Buyer
+              I&apos;m a Buyer
             </h3>
 
             <p className="mt-4 leading-7 text-neutral-400">
@@ -93,7 +93,7 @@ export default function BuyerSeller() {
             </div>
 
             <h3 className="mt-7 text-2xl font-black">
-              I'm a Seller
+              I&apos;m a Seller
             </h3>
 
             <p className="mt-4 leading-7 text-orange-100/70">

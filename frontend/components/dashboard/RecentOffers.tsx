@@ -69,6 +69,42 @@ function formatDate(value?: string | null) {
   });
 }
 
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = (
+      error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      }
+    ).response;
+
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
+
 function formatStatus(status?: string | null) {
   if (!status) return "Unknown";
 
@@ -115,15 +151,16 @@ export default function RecentOffers({
       toast.success("Offer accepted successfully.");
 
       onOfferUpdated?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         "FAILED TO ACCEPT OFFER:",
         error
       );
 
-      const message =
-        error?.response?.data?.message ||
-        "Unable to accept offer.";
+      const message = getErrorMessage(
+  error,
+  "Unable to accept offer."
+);
 
       toast.error(message);
     } finally {
@@ -140,15 +177,16 @@ export default function RecentOffers({
       toast.success("Offer rejected.");
 
       onOfferUpdated?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         "FAILED TO REJECT OFFER:",
         error
       );
 
-      const message =
-        error?.response?.data?.message ||
-        "Unable to reject offer.";
+      const message = getErrorMessage(
+  error,
+  "Unable to reject offer."
+);
 
       toast.error(message);
     } finally {

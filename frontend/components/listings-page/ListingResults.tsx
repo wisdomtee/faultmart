@@ -9,10 +9,11 @@ import { useSearchParams } from "next/navigation";
 import ListingGrid from "@/components/listings/ListingGrid";
 import ListingListCard from "@/components/listings/ListingListCard";
 import ViewToggle from "./ViewToggle";
+import { Listing } from "@/types/listing";
 
 
 interface Props {
-  listings: any[];
+  listings: Listing[];
   total: number;
 }
 
