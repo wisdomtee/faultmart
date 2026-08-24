@@ -186,88 +186,79 @@ async register(
 /**
  * Login User
  */
-async login(
-  data: LoginDto,
-  userAgent?: string,
-  ipAddress?: string
-) {
-  const email = data.email.trim().toLowerCase();
+  /**
+   * Login User
+   */
+  async login(
+    data: LoginDto,
+    userAgent?: string,
+    ipAddress?: string
+  ) {
+    const email = data.email.trim().toLowerCase();
 
-  const user = await prisma.user.findUnique({
-  where: {
-    email,
-  },
-});
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
 
-console.log("LOGIN DEBUG:", {
-  email,
-  userFound: !!user,
-  userRole: user?.role,
-  userStatus: user?.status,
-  hasPasswordHash: !!user?.password,
-});
-
-if (!user) {
-  throw new AppError("Invalid email or password.", 401);
-}
-
-const passwordMatches = await comparePassword(
-  data.password,
-  user.password
-);
-
-console.log("PASSWORD MATCH:", passwordMatches);
-
-if (!passwordMatches) {
-  throw new AppError("Invalid email or password.", 401);
-}
-  const user = await prisma.user.findUnique({
-    where: {
+    console.log("LOGIN DEBUG:", {
       email,
-    },
-  });
+      userFound: !!user,
+      userRole: user?.role,
+      userStatus: user?.status,
+      hasPasswordHash: !!user?.password,
+    });
 
-  if (!user) {
-    throw new AppError("Invalid email or password.", 401);
-  }
+    if (!user) {
+      throw new AppError(
+        "Invalid email or password.",
+        401
+      );
+    }
 
-  const passwordMatches = await comparePassword(
-    data.password,
-    user.password
-  );
-
-  if (!passwordMatches) {
-    throw new AppError("Invalid email or password.", 401);
-  }
-
-  if (user.status !== UserStatus.ACTIVE) {
-    throw new AppError(
-      "Your account is not active.",
-      403
+    const passwordMatches = await comparePassword(
+      data.password,
+      user.password
     );
+
+    console.log("PASSWORD MATCH:", passwordMatches);
+
+    if (!passwordMatches) {
+      throw new AppError(
+        "Invalid email or password.",
+        401
+      );
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new AppError(
+        "Your account is not active.",
+        403
+      );
+    }
+
+    const payload: JwtPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const tokens = this.createTokens(payload);
+
+    await this.saveRefreshToken(
+      user.id,
+      tokens.refreshToken,
+      userAgent,
+      ipAddress
+    );
+
+    return {
+      user: this.sanitizeUser(user),
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
   }
-
-  const payload: JwtPayload = {
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  };
-
-  const tokens = this.createTokens(payload);
-
-  await this.saveRefreshToken(
-    user.id,
-    tokens.refreshToken,
-    userAgent,
-    ipAddress
-  );
-
-  return {
-    user: this.sanitizeUser(user),
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
-  };
-}
 /**
  * Refresh Access Token
  */
