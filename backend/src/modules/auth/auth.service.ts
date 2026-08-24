@@ -194,6 +194,34 @@ async login(
   const email = data.email.trim().toLowerCase();
 
   const user = await prisma.user.findUnique({
+  where: {
+    email,
+  },
+});
+
+console.log("LOGIN DEBUG:", {
+  email,
+  userFound: !!user,
+  userRole: user?.role,
+  userStatus: user?.status,
+  hasPasswordHash: !!user?.password,
+});
+
+if (!user) {
+  throw new AppError("Invalid email or password.", 401);
+}
+
+const passwordMatches = await comparePassword(
+  data.password,
+  user.password
+);
+
+console.log("PASSWORD MATCH:", passwordMatches);
+
+if (!passwordMatches) {
+  throw new AppError("Invalid email or password.", 401);
+}
+  const user = await prisma.user.findUnique({
     where: {
       email,
     },
