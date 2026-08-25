@@ -1,15 +1,20 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, ShieldCheck } from "lucide-react";
 
 import { useAuthStore } from "@/store/auth-store";
 
 export default function AdminHeader() {
   const { user } = useAuthStore();
 
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
+  const displayRole = isSuperAdmin
+    ? "Super Administrator"
+    : "Administrator";
+
   return (
     <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white px-8">
-
       {/* Page Context */}
       <div>
         <p className="text-sm text-slate-500">
@@ -17,7 +22,9 @@ export default function AdminHeader() {
         </p>
 
         <h1 className="text-xl font-bold text-slate-900">
-          Administration
+          {isSuperAdmin
+            ? "Super Administration"
+            : "Administration"}
         </h1>
       </div>
 
@@ -53,10 +60,20 @@ export default function AdminHeader() {
           />
         </button>
 
-        {/* Admin */}
+        {/* Administrator */}
         <div className="flex items-center gap-3">
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-sm font-bold text-red-600">
+          <div
+            className="
+              flex h-10 w-10
+              items-center justify-center
+              rounded-full
+              bg-red-100
+              text-sm
+              font-bold
+              text-red-600
+            "
+          >
             {user?.firstName?.charAt(0)?.toUpperCase() || "A"}
           </div>
 
@@ -65,15 +82,18 @@ export default function AdminHeader() {
               {user?.firstName || "Administrator"}
             </p>
 
-            <p className="text-xs text-slate-500">
-              Administrator
-            </p>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              {isSuperAdmin && (
+                <ShieldCheck className="h-3.5 w-3.5 text-red-600" />
+              )}
+
+              <span>{displayRole}</span>
+            </div>
           </div>
 
         </div>
 
       </div>
-
     </header>
   );
 }

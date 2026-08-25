@@ -857,6 +857,31 @@ export async function updateAdminReportStatus(
 
   return data.data;
 }
+
+/**
+ * =========================================================
+ * ADMIN AUDIT LOGS
+ * =========================================================
+ */
+
+/**
+ * Get audit logs
+ */
+export async function getAuditLogs(
+  params?: {
+    page?: number;
+    limit?: number;
+  }
+) {
+  const { data } = await api.get(
+    "/api/audit",
+    {
+      params,
+    }
+  );
+
+  return data.data;
+}
 /**
  * Create or get an existing conversation
  */
