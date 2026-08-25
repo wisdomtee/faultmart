@@ -46,9 +46,7 @@ function getErrorMessage(
 export default function LoginPage() {
   const router = useRouter();
 
-  const setAuth = useAuthStore((state) => state.setAuth);
-
-  const [email, setEmail] = useState("");
+    const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -58,12 +56,7 @@ export default function LoginPage() {
   ) {
     e.preventDefault();
 
-    console.log("=================================");
-    console.log("LOGIN BUTTON CLICKED");
-    console.log("EMAIL:", email);
-    console.log("=================================");
-
-    setError("");
+        setError("");
     setLoading(true);
 
     try {
@@ -72,50 +65,23 @@ export default function LoginPage() {
         password,
       });
 
-      console.log("LOGIN RESPONSE:", result);
+            if (!result?.user || !result?.accessToken) {
+  throw new Error(
+    "Invalid login response from server."
+  );
+}
 
-      if (!result?.user || !result?.accessToken) {
-        throw new Error(
-          "Invalid login response from server."
-        );
-      }
+console.log("LOGIN USER:", result.user);
+console.log("LOGIN ROLE:", result.user.role);
 
-      // Store authenticated user + token
-      setAuth(
-        result.user,
-        result.accessToken
-      );
-
-      // Verify Zustand state immediately
-      const authState =
-        useAuthStore.getState();
-
-      console.log(
-        "================================="
-      );
-      console.log("AUTH STORE AFTER LOGIN:");
-      console.log("USER:", authState.user);
-      console.log(
-        "USER ID:",
-        authState.user?.id
-      );
-      console.log(
-        "USER ROLE:",
-        authState.user?.role
-      );
-      console.log(
-        "IS AUTHENTICATED:",
-        authState.isAuthenticated
-      );
-      console.log(
-        "ACCESS TOKEN EXISTS:",
-        !!authState.accessToken
-      );
-      console.log(
-        "================================="
-      );
-
-      router.push("/");
+if (
+  result.user.role === "SUPER_ADMIN" ||
+  result.user.role === "ADMIN"
+) {
+  router.push("/admin");
+} else {
+  router.push("/dashboard");
+}
     } catch (err: unknown) {
   console.error(
     "LOGIN FAILED:",
