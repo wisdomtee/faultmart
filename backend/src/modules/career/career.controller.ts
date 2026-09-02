@@ -60,18 +60,18 @@ class CareerController {
 
   async applyForJob(req: Request, res: Response) {
     try {
-      if (!req.user?.id) {
-        return res.status(401).json({
-          success: false,
-          message: "Unauthorized",
-        });
-      }
+      if (!req.user?.userId) {
+  return res.status(401).json({
+    success: false,
+    message: "Unauthorized",
+  });
+}
 
-      const application = await careerService.applyForJob(
-        String(req.params.id),
-        req.user.id,
-        req.body
-      );
+const application = await careerService.applyForJob(
+  String(req.params.id),
+  req.user.userId,
+  req.body
+);
 
       return res.status(201).json({
         success: true,

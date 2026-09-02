@@ -65,10 +65,9 @@ class HomeService {
       prisma.listing.findMany({
 
         where: {
-
-          status: "ACTIVE"
-
-        },
+  status: "ACTIVE",
+  deletedAt: null,
+},
 
         take: 12,
 
@@ -107,10 +106,9 @@ class HomeService {
       prisma.listing.findMany({
 
         where: {
-
-          status: "ACTIVE"
-
-        },
+  status: "ACTIVE",
+  deletedAt: null,
+},
 
         take: 12,
 
@@ -178,14 +176,11 @@ class HomeService {
         prisma.user.count(),
 
         prisma.listing.count({
-
-          where: {
-
-            status: "ACTIVE"
-
-          }
-
-        }),
+  where: {
+    status: "ACTIVE",
+    deletedAt: null,
+  },
+}),
 
         prisma.order.count({
 

@@ -20,10 +20,11 @@ export const registerSchema = z.object({
     .toLowerCase(),
 
   phone: z
-    .string()
-    .trim()
-    .min(10, "Phone number is too short")
-    .max(20),
+  .string()
+  .trim()
+  .min(10, "Phone number is too short")
+  .max(20)
+  .optional(),
 
   password: z
     .string()
@@ -35,7 +36,11 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  identifier: z.string().trim(),
+  email: z
+    .string()
+    .trim()
+    .email("Invalid email address")
+    .toLowerCase(),
 
   password: z
     .string()

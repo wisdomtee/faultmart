@@ -2,6 +2,12 @@ import { Router } from "express";
 import listingController from "./listing.controller";
 import { authenticate } from "../../middleware/auth.middleware";
 import upload from "../../middleware/upload";
+import { validate } from "../../middleware/validate";
+
+import {
+  createListingSchema,
+  updateListingSchema,
+} from "./listing.validation";
 
 const router = Router();
 
@@ -167,6 +173,7 @@ router.post(
   "/",
   authenticate,
   upload.array("images", 10),
+  validate(createListingSchema),
   listingController.createListing
 );
 
@@ -221,6 +228,7 @@ router.put(
   "/:id",
   authenticate,
   upload.array("images", 10),
+  validate(updateListingSchema),
   listingController.updateListing
 );
 

@@ -145,96 +145,144 @@ class OrderService {
    * Get user's orders
    */
   async getMyOrders(userId: string) {
-
-    return prisma.order.findMany({
-
-      where: {
-
-        OR: [
-          {
-            buyerId: userId,
-          },
-          {
-            sellerId: userId,
-          },
-        ],
-
-      },
-
-
-      include: {
-  listing: true,
-  buyer: true,
-  seller: true,
-  delivery: true,
-},
-
-
-      orderBy: {
-        createdAt: "desc",
-      },
-
-    });
-
-  }
-
-
-
-
-
-  /**
-   * Get single order
-   */
-  async getOrderById(
-    orderId: string,
-    userId: string
-  ) {
-
-    const order =
-      await prisma.order.findFirst({
-
-        where: {
-
-          id: orderId,
-
-          OR: [
-            {
-              buyerId: userId,
-            },
-            {
-              sellerId: userId,
-            },
-          ],
-
+  const orders = await prisma.order.findMany({
+    where: {
+      OR: [
+        {
+          buyerId: userId,
         },
+        {
+          sellerId: userId,
+        },
+      ],
+    },
 
+    include: {
+      listing: true,
+      buyer: true,
+      seller: true,
+      delivery: true,
 
-        include: {
-  listing: true,
-  buyer: true,
-  seller: true,
-  delivery: true,
-},
+      reviews: {
+        where: {
+          reviewerId: userId,
+        },
+        select: {
+          id: true,
+          type: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+        },
+      },
+    },
 
-      });
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
+  return orders.map((order) => {
+    const isBuyer = order.buyerId === userId;
 
-    if (!order) {
+    const reviewType = isBuyer
+      ? "BUYER_TO_SELLER"
+      : "SELLER_TO_BUYER";
 
-      throw new AppError(
-        "Order not found.",
-        404
-      );
+    const existingReview = order.reviews.find(
+      (review) => review.type === reviewType
+    );
 
-    }
+    return {
+      ...order,
 
+      reviewStatus: {
+        canReview:
+          order.status === "DELIVERED" &&
+          !existingReview,
 
-    return order;
+        hasReviewed: Boolean(existingReview),
 
+        type: reviewType,
+
+        reviewId: existingReview?.id ?? null,
+      },
+    };
+  });
+}
+
+async getOrderById(
+  orderId: string,
+  userId: string
+) {
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+
+      OR: [
+        {
+          buyerId: userId,
+        },
+        {
+          sellerId: userId,
+        },
+      ],
+    },
+
+    include: {
+      listing: true,
+      buyer: true,
+      seller: true,
+      delivery: true,
+
+      reviews: {
+        where: {
+          reviewerId: userId,
+        },
+        select: {
+          id: true,
+          type: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new AppError(
+      "Order not found.",
+      404
+    );
   }
 
+  const isBuyer = order.buyerId === userId;
 
+  const reviewType = isBuyer
+    ? "BUYER_TO_SELLER"
+    : "SELLER_TO_BUYER";
 
+  const existingReview = order.reviews.find(
+    (review) => review.type === reviewType
+  );
+
+  return {
+    ...order,
+
+    reviewStatus: {
+      canReview:
+        order.status === "DELIVERED" &&
+        !existingReview,
+
+      hasReviewed: Boolean(existingReview),
+
+      type: reviewType,
+
+      reviewId: existingReview?.id ?? null,
+    },
+  };
+}
 
 
   /**

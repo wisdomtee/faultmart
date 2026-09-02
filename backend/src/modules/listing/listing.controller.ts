@@ -24,15 +24,20 @@ class ListingController {
     console.log("FILE COUNT:", files.length);
 
     const data = {
-      ...req.body,
+  ...req.body,
 
-      negotiable:
-        req.body.negotiable === "true"
-          ? true
-          : req.body.negotiable === "false"
-          ? false
-          : undefined,
-    };
+  price:
+    req.body.price !== undefined
+      ? Number(req.body.price)
+      : undefined,
+
+  negotiable:
+    req.body.negotiable === "true"
+      ? true
+      : req.body.negotiable === "false"
+      ? false
+      : undefined,
+};
 
     console.log("NORMALIZED DATA:", data);
     console.log(

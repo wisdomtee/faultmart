@@ -763,6 +763,102 @@ setOfferDisclaimerAccepted(false);
           OFFER MODAL
       ======================================================= */}
 
+        {/* ======================================================
+            PURCHASE MODAL
+        ======================================================= */}
+
+        {showPurchaseModal && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
+            onClick={() => {
+              if (!submittingPurchase) {
+                setShowPurchaseModal(false);
+              }
+            }}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-6 flex items-start justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Complete Your Purchase
+                  </h2>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                    Enter your delivery address to place this order.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={submittingPurchase}
+                  onClick={() => setShowPurchaseModal(false)}
+                  className="rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50"
+                  aria-label="Close purchase modal"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <label
+                  htmlFor="purchase-shipping-address"
+                  className="mb-2 block text-sm font-semibold text-gray-700"
+                >
+                  Delivery Address
+                </label>
+
+                <textarea
+                  id="purchase-shipping-address"
+                  value={shippingAddress}
+                  onChange={(event) =>
+                    setShippingAddress(event.target.value)
+                  }
+                  placeholder="Enter your full delivery address..."
+                  rows={4}
+                  disabled={submittingPurchase}
+                  autoFocus
+                  className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:bg-gray-100"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={submittingPurchase}
+                  onClick={() => {
+                    setShippingAddress("");
+                    setShowPurchaseModal(false);
+                  }}
+                  className="flex-1 rounded-xl border border-gray-300 py-3 font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  disabled={
+                    submittingPurchase ||
+                    !shippingAddress.trim()
+                  }
+                  onClick={handleSubmitPurchase}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-600 py-3 font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {submittingPurchase && (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  )}
+
+                  {submittingPurchase
+                    ? "Placing Order..."
+                    : "Place Order"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       {showOfferModal && (
         <div
           className="

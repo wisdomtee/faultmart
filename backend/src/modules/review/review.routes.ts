@@ -109,14 +109,14 @@ router.get(
  *           schema:
  *             type: object
  *             required:
- *               - reviewedUserId
  *               - orderId
  *               - rating
+ *               - type
  *             properties:
- *               reviewedUserId:
- *                 type: string
  *               orderId:
  *                 type: string
+ *                 format: uuid
+ *                 description: ID of the completed order being reviewed
  *               rating:
  *                 type: integer
  *                 minimum: 1
@@ -124,7 +124,15 @@ router.get(
  *                 example: 5
  *               comment:
  *                 type: string
+ *                 maxLength: 1000
  *                 example: Excellent seller. Fast delivery.
+ *               type:
+ *                 type: string
+ *                 enum:
+ *                   - BUYER_TO_SELLER
+ *                   - SELLER_TO_BUYER
+ *                 example: BUYER_TO_SELLER
+ *                 description: Direction of the review
  *     responses:
  *       201:
  *         description: Review created successfully
