@@ -48,44 +48,53 @@ const numberFromMultipart = z
 /**
  * Create Listing
  *
- * FaultMart listings are currently intended
- * specifically for faulty goods.
+ * Validation middleware passes:
+ * {
+ *   body,
+ *   params,
+ *   query
+ * }
+ *
+ * Therefore the request body must be wrapped
+ * inside the `body` property.
  */
 export const createListingSchema = z.object({
-  title: z.string().min(5).max(150),
+  body: z.object({
+    title: z.string().min(5).max(150),
 
-  description: z.string().min(20),
+    description: z.string().min(20),
 
-  categoryId: z.string().uuid(),
+    categoryId: z.string().uuid(),
 
-  price: numberFromMultipart.pipe(
-    z.number().positive()
-  ),
+    price: numberFromMultipart.pipe(
+      z.number().positive()
+    ),
 
-  currency: z
-    .nativeEnum(Currency)
-    .optional(),
+    currency: z
+      .nativeEnum(Currency)
+      .optional(),
 
-  negotiable:
-    booleanFromMultipart.optional(),
+    negotiable:
+      booleanFromMultipart.optional(),
 
-  condition:
-    z.literal(ListingCondition.FAULTY),
+    condition:
+      z.nativeEnum(ListingCondition),
 
-  faultSeverity:
-    z.nativeEnum(FaultSeverity).optional(),
+    faultSeverity:
+      z.nativeEnum(FaultSeverity).optional(),
 
-  faultDescription:
-    z.string().optional(),
+    faultDescription:
+      z.string().optional(),
 
-  location:
-    z.string().optional(),
+    location:
+      z.string().optional(),
 
-  state:
-    z.string().min(2),
+    state:
+      z.string().min(2).optional(),
 
-  city:
-    z.string().min(2),
+    city:
+      z.string().min(2).optional(),
+  }),
 });
 
 /**
@@ -95,41 +104,43 @@ export const createListingSchema = z.object({
  * it must still conform to the real Prisma enum.
  */
 export const updateListingSchema = z.object({
-  title:
-    z.string().min(5).max(150).optional(),
+  body: z.object({
+    title:
+      z.string().min(5).max(150).optional(),
 
-  description:
-    z.string().min(20).optional(),
+    description:
+      z.string().min(20).optional(),
 
-  categoryId:
-    z.string().uuid().optional(),
+    categoryId:
+      z.string().uuid().optional(),
 
-  price:
-    numberFromMultipart
-      .pipe(z.number().positive())
-      .optional(),
+    price:
+      numberFromMultipart
+        .pipe(z.number().positive())
+        .optional(),
 
-  currency:
-    z.nativeEnum(Currency).optional(),
+    currency:
+      z.nativeEnum(Currency).optional(),
 
-  negotiable:
-    booleanFromMultipart.optional(),
+    negotiable:
+      booleanFromMultipart.optional(),
 
-  condition:
-    z.nativeEnum(ListingCondition).optional(),
+    condition:
+      z.nativeEnum(ListingCondition).optional(),
 
-  faultSeverity:
-    z.nativeEnum(FaultSeverity).optional(),
+    faultSeverity:
+      z.nativeEnum(FaultSeverity).optional(),
 
-  faultDescription:
-    z.string().optional(),
+    faultDescription:
+      z.string().optional(),
 
-  location:
-    z.string().optional(),
+    location:
+      z.string().optional(),
 
-  state:
-    z.string().min(2).optional(),
+    state:
+      z.string().min(2).optional(),
 
-  city:
-    z.string().min(2).optional(),
+    city:
+      z.string().min(2).optional(),
+  }),
 });
