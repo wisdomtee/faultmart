@@ -30,6 +30,14 @@ export const validate =
       next();
     } catch (error) {
       if (error instanceof ZodError) {
+        console.error("========== VALIDATION FAILED ==========");
+        console.error("REQUEST BODY:", req.body);
+        console.error(
+          "VALIDATION ISSUES:",
+          JSON.stringify(error.issues, null, 2)
+        );
+        console.error("========================================");
+
         return res.status(400).json({
           success: false,
           message: "Validation failed.",
