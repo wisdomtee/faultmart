@@ -76,6 +76,13 @@ export default function Header() {
             >
               About
             </Link>
+
+            <Link
+              href="/download"
+              className="text-sm font-semibold text-orange-600 transition hover:text-orange-700"
+            >
+              Download App
+            </Link>
           </nav>
 
           {/* Desktop Actions */}
