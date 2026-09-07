@@ -631,6 +631,66 @@ export async function loginUser(
 }
 
 /**
+ * Request password reset
+ */
+export async function forgotPassword(email: string) {
+  const res = await fetch(
+    `${API_URL}/api/auth/forgot-password`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ email }),
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      data.message || "Unable to request password reset"
+    );
+  }
+
+  return data;
+}
+
+/**
+ * Reset password
+ */
+export async function resetPassword(
+  token: string,
+  password: string
+) {
+  const res = await fetch(
+    `${API_URL}/api/auth/reset-password`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        token,
+        password,
+      }),
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      data.message || "Unable to reset password"
+    );
+  }
+
+  return data;
+}
+
+/**
  * Register a new user
  *
  * POST /api/auth/register
