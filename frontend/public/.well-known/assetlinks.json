@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.technerv.faultmart",
+      "sha256_cert_fingerprints": [
+        "8F:32:7D:4C:63:33:D1:81:5E:F9:7C:C6:B7:58:B7:A7:04:9C:CD:1C:A6:12:46:9B:7D:D1:4B:9B:1B:62:5E:09",
+        "1A:F5:67:8E:C6:ED:8E:17:30:2E:8D:36:25:BE:21:38:60:A6:D4:B5:BA:59:09:0C:97:33:BE:C2:27:51:B5:72"
+      ]
+    }
+  }
+]
