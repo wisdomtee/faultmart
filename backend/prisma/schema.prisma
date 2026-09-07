@@ -650,6 +650,7 @@ enum ListingCondition {
 }
 
 enum FaultSeverity {
+  NONE
   MINOR
   MODERATE
   MAJOR
