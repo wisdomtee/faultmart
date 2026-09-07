@@ -9,6 +9,10 @@ export const env = {
 
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY!,
 
+  RESEND_API_KEY: process.env.RESEND_API_KEY!,
+  MAIL_FROM: process.env.MAIL_FROM!,
+  FRONTEND_URL: process.env.FRONTEND_URL!,
+
   JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET!,
 
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET!,

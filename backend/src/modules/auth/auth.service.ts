@@ -3,6 +3,7 @@ import { Prisma, Role, UserStatus } from "@prisma/client";
 
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
+import { sendPasswordResetEmail } from "../../utils/email";
 
 import {
   hashPassword,
@@ -348,6 +349,119 @@ async refresh(
     user: this.sanitizeUser(
       storedToken.user
     ),
+  };
+}
+
+/**
+ * Request Password Reset
+ *
+ * Always returns the same public response so this endpoint
+ * cannot be used to discover whether an email is registered.
+ */
+async forgotPassword(emailAddress: string) {
+  const email = emailAddress.trim().toLowerCase();
+
+  const genericMessage =
+    "If an account exists for that email, a password reset link has been sent.";
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    return { message: genericMessage };
+  }
+
+  const now = new Date();
+
+  await prisma.passwordResetToken.deleteMany({
+    where: {
+      userId: user.id,
+      OR: [
+        { used: true },
+        { expiresAt: { lt: now } },
+      ],
+    },
+  });
+
+  await prisma.passwordResetToken.deleteMany({
+    where: {
+      userId: user.id,
+      used: false,
+      expiresAt: { gte: now },
+    },
+  });
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(rawToken)
+    .digest("hex");
+
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      token: tokenHash,
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+    },
+  });
+
+  const resetUrl =
+    `${process.env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+  try {
+    await sendPasswordResetEmail(user.email, resetUrl);
+  } catch (error) {
+    console.error("PASSWORD RESET EMAIL ERROR:", error);
+  }
+
+  return { message: genericMessage };
+}
+
+/**
+ * Reset Password
+ */
+async resetPassword(rawToken: string, newPassword: string) {
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(rawToken)
+    .digest("hex");
+
+  const resetToken = await prisma.passwordResetToken.findUnique({
+    where: { token: tokenHash },
+  });
+
+  if (
+    !resetToken ||
+    resetToken.used ||
+    resetToken.expiresAt < new Date()
+  ) {
+    throw new AppError(
+      "This password reset link is invalid or has expired.",
+      400
+    );
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: resetToken.userId },
+      data: { password: hashedPassword },
+    }),
+    prisma.passwordResetToken.update({
+      where: { id: resetToken.id },
+      data: { used: true },
+    }),
+    prisma.refreshToken.deleteMany({
+      where: { userId: resetToken.userId },
+    }),
+  ]);
+
+  return {
+    message:
+      "Password reset successful. You can now sign in with your new password.",
   };
 }
 
