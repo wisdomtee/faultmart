@@ -113,6 +113,7 @@ if (
         onSubmit={handleLogin}
         className="space-y-4"
       >
+
         {error && (
           <div className="rounded-lg bg-red-100 p-3 text-sm text-red-600">
             {error}
@@ -142,6 +143,15 @@ if (
           disabled={loading}
           required
         />
+
+          <div className="text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
         <button
           type="submit"

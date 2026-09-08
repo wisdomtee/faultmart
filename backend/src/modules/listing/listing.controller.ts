@@ -32,7 +32,9 @@ class ListingController {
       : undefined,
 
   negotiable:
-    req.body.negotiable === "true"
+    typeof req.body.negotiable === "boolean"
+      ? req.body.negotiable
+      : req.body.negotiable === "true"
       ? true
       : req.body.negotiable === "false"
       ? false

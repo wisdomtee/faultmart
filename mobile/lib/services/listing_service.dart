@@ -1,68 +1,34 @@
 import 'dart:convert';
-import 'package:image_picker/image_picker.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 import '../core/constants/api_constants.dart';
 import '../models/homepage.dart';
 import '../models/listing.dart';
+import 'api_client.dart';
 import 'auth_storage.dart';
 
 class ListingService {
   ListingService._();
 
-  /// Fetch all public homepage data from the FaultMart API.
-
-  /// Fetch public listings from the FaultMart API.
-  ///
-  /// Supports:
-  /// - pagination
-  /// - search
-  /// - category
-  /// - state
-  /// - city
-  /// - price range
-  /// - condition
-  /// - fault severity
-  /// - sorting
-
+  /// Fetch public homepage data.
   static Future<HomepageData> getHomepage() async {
     final response = await http.get(
       Uri.parse(ApiConstants.home),
       headers: const {'Accept': 'application/json'},
     );
 
-    dynamic decoded;
+    final decoded = _decode(response);
 
-    try {
-      decoded = jsonDecode(response.body);
-    } catch (_) {
-      throw Exception(
-        'Invalid server response. Status: ${response.statusCode}.',
-      );
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      if (decoded is Map<String, dynamic>) {
-        throw Exception(
-          decoded['message']?.toString() ?? 'Failed to retrieve homepage.',
-        );
-      }
-
-      throw Exception(
-        'Failed to retrieve homepage. '
-        'Status: ${response.statusCode}.',
-      );
-    }
+    _ensureSuccess(
+      response,
+      decoded,
+      fallback: 'Failed to retrieve homepage.',
+    );
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception('Invalid server response.');
-    }
-
-    if (decoded['success'] != true) {
-      throw Exception(
-        decoded['message']?.toString() ?? 'Failed to retrieve homepage.',
-      );
     }
 
     final data = decoded['data'];
@@ -74,6 +40,7 @@ class ListingService {
     return HomepageData.fromJson(data);
   }
 
+  /// Fetch public marketplace listings.
   static Future<ListingPage> getListings({
     int page = 1,
     int limit = 20,
@@ -121,37 +88,16 @@ class ListingService {
       headers: const {'Accept': 'application/json'},
     );
 
-    dynamic decoded;
+    final decoded = _decode(response);
 
-    try {
-      decoded = jsonDecode(response.body);
-    } catch (_) {
-      throw Exception(
-        'Invalid server response. Status: ${response.statusCode}.',
-      );
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      if (decoded is Map<String, dynamic>) {
-        throw Exception(
-          decoded['message']?.toString() ?? 'Failed to retrieve listings.',
-        );
-      }
-
-      throw Exception(
-        'Failed to retrieve listings. '
-        'Status: ${response.statusCode}.',
-      );
-    }
+    _ensureSuccess(
+      response,
+      decoded,
+      fallback: 'Failed to retrieve listings.',
+    );
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception('Invalid server response.');
-    }
-
-    if (decoded['success'] != true) {
-      throw Exception(
-        decoded['message']?.toString() ?? 'Failed to retrieve listings.',
-      );
     }
 
     final data = decoded['data'];
@@ -163,7 +109,43 @@ class ListingService {
     return ListingPage.fromJson(data);
   }
 
-  /// Create a new listing with optional images.
+  /// Fetch the current user's listings.
+  static Future<List<Listing>> getMyListings() async {
+    final response = await ApiClient.get(
+      Uri.parse(ApiConstants.myListings),
+      headers: const {
+        'Accept': 'application/json',
+      },
+    );
+
+    final decoded = _decode(response);
+
+    _ensureSuccess(
+      response,
+      decoded,
+      fallback: 'Failed to retrieve your listings.',
+    );
+
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Invalid server response.');
+    }
+
+    final data = decoded['data'];
+
+    if (data is! List) {
+      throw Exception('Invalid my listings response.');
+    }
+
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(Listing.fromJson)
+        .toList();
+  }
+
+  /// Create a listing with optional images.
+  ///
+  /// ApiClient.sendMultipart automatically retries once after a successful
+  /// token refresh if the original request receives a 401.
   static Future<Listing> createListing({
     required String title,
     required String description,
@@ -185,94 +167,81 @@ class ListingService {
       throw Exception('You must be logged in to create a listing.');
     }
 
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse(ApiConstants.listings),
+    final streamedResponse = await ApiClient.sendMultipart(
+      (token) async {
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse(ApiConstants.listings),
+        );
+
+        request.headers.addAll({
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        });
+
+        request.fields.addAll({
+          'title': title,
+          'description': description,
+          'categoryId': categoryId,
+          'price': price.toString(),
+          'currency': currency,
+          'condition': condition,
+          'negotiable': negotiable.toString(),
+        });
+
+        if (faultSeverity != null &&
+            faultSeverity.trim().isNotEmpty) {
+          request.fields['faultSeverity'] = faultSeverity.trim();
+        }
+
+        if (faultDescription != null &&
+            faultDescription.trim().isNotEmpty) {
+          request.fields['faultDescription'] =
+              faultDescription.trim();
+        }
+
+        if (location != null && location.trim().isNotEmpty) {
+          request.fields['location'] = location.trim();
+        }
+
+        if (state != null && state.trim().isNotEmpty) {
+          request.fields['state'] = state.trim();
+        }
+
+        if (city != null && city.trim().isNotEmpty) {
+          request.fields['city'] = city.trim();
+        }
+
+        for (final image in images.take(10)) {
+          final bytes = await image.readAsBytes();
+
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'images',
+              bytes,
+              filename: image.name,
+            ),
+          );
+        }
+
+        return request;
+      },
     );
 
-    request.headers.addAll({
-      'Authorization': 'Bearer $accessToken',
-      'Accept': 'application/json',
-    });
+    final response = await http.Response.fromStream(
+      streamedResponse,
+    );
 
-    request.fields.addAll({
-      'title': title,
-      'description': description,
-      'categoryId': categoryId,
-      'price': price.toString(),
-      'currency': currency,
-      'condition': condition,
-      'negotiable': negotiable.toString(),
-    });
+    final decoded = _decode(response);
 
-    if (faultSeverity != null && faultSeverity.trim().isNotEmpty) {
-      request.fields['faultSeverity'] = faultSeverity.trim();
-    }
-
-    if (faultDescription != null && faultDescription.trim().isNotEmpty) {
-      request.fields['faultDescription'] = faultDescription.trim();
-    }
-
-    if (location != null && location.trim().isNotEmpty) {
-      request.fields['location'] = location.trim();
-    }
-
-    if (state != null && state.trim().isNotEmpty) {
-      request.fields['state'] = state.trim();
-    }
-
-    if (city != null && city.trim().isNotEmpty) {
-      request.fields['city'] = city.trim();
-    }
-
-    for (final image in images.take(10)) {
-  final bytes = await image.readAsBytes();
-
-  request.files.add(
-    http.MultipartFile.fromBytes(
-      'images',
-      bytes,
-      filename: image.name,
-    ),
-  );
-}
-
-    final streamedResponse = await request.send();
-
-    final response = await http.Response.fromStream(streamedResponse);
-
-    dynamic decoded;
-
-    try {
-      decoded = jsonDecode(response.body);
-    } catch (_) {
-      throw Exception(
-        'Invalid server response. '
-        'Status: ${response.statusCode}.',
-      );
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      if (decoded is Map<String, dynamic>) {
-        throw Exception(
-          decoded['message']?.toString() ?? 'Failed to create listing.',
-        );
-      }
-
-      throw Exception(
-        'Failed to create listing. '
-        'Status: ${response.statusCode}.',
-      );
-    }
+    _ensureSuccess(
+      response,
+      decoded,
+      fallback: 'Failed to create listing.',
+    );
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception('Invalid server response.');
-    }
-
-    if (decoded['success'] != true) {
-      throw Exception(
-        decoded['message']?.toString() ?? 'Failed to create listing.',
-      );
     }
 
     final data = decoded['data'];
@@ -284,44 +253,23 @@ class ListingService {
     return Listing.fromJson(data);
   }
 
-  /// Fetch a single listing using its slug.
+  /// Fetch a single public listing by slug.
   static Future<Listing> getListingBySlug(String slug) async {
     final response = await http.get(
       Uri.parse(ApiConstants.listingBySlug(slug)),
       headers: const {'Accept': 'application/json'},
     );
 
-    dynamic decoded;
+    final decoded = _decode(response);
 
-    try {
-      decoded = jsonDecode(response.body);
-    } catch (_) {
-      throw Exception(
-        'Invalid server response. Status: ${response.statusCode}.',
-      );
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      if (decoded is Map<String, dynamic>) {
-        throw Exception(
-          decoded['message']?.toString() ?? 'Failed to retrieve listing.',
-        );
-      }
-
-      throw Exception(
-        'Failed to retrieve listing. '
-        'Status: ${response.statusCode}.',
-      );
-    }
+    _ensureSuccess(
+      response,
+      decoded,
+      fallback: 'Failed to retrieve listing.',
+    );
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception('Invalid server response.');
-    }
-
-    if (decoded['success'] != true) {
-      throw Exception(
-        decoded['message']?.toString() ?? 'Failed to retrieve listing.',
-      );
     }
 
     final data = decoded['data'];
@@ -341,35 +289,23 @@ class ListingService {
       return false;
     }
 
-    final response = await http.get(
+    final response = await ApiClient.get(
       Uri.parse(ApiConstants.favoriteCheck(listingId)),
-      headers: {
+      headers: const {
         'Accept': 'application/json',
-        'Authorization': 'Bearer $accessToken',
       },
     );
 
-    dynamic decoded;
+    final decoded = _decode(response);
 
-    try {
-      decoded = jsonDecode(response.body);
-    } catch (_) {
-      throw Exception(
-        'Invalid server response. Status: ${response.statusCode}.',
-      );
-    }
+    _ensureSuccess(
+      response,
+      decoded,
+      fallback: 'Failed to check favorite status.',
+    );
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      if (decoded is Map<String, dynamic>) {
-        throw Exception(
-          decoded['message']?.toString() ?? 'Failed to check favorite status.',
-        );
-      }
-
-      throw Exception(
-        'Failed to check favorite status. '
-        'Status: ${response.statusCode}.',
-      );
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Invalid favorite status response.');
     }
 
     final data = decoded['data'];
@@ -389,44 +325,20 @@ class ListingService {
       throw Exception('You must be logged in to save listings.');
     }
 
-    final response = await http.post(
+    final response = await ApiClient.post(
       Uri.parse(ApiConstants.favoriteByListing(listingId)),
-      headers: {
+      headers: const {
         'Accept': 'application/json',
-        'Authorization': 'Bearer $accessToken',
       },
     );
 
-    dynamic decoded;
+    final decoded = _decode(response);
 
-    try {
-      decoded = jsonDecode(response.body);
-    } catch (_) {
-      throw Exception(
-        'Invalid server response. Status: ${response.statusCode}.',
-      );
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      if (decoded is Map<String, dynamic>) {
-        throw Exception(
-          decoded['message']?.toString() ?? 'Failed to save listing.',
-        );
-      }
-
-      throw Exception(
-        'Failed to save listing. '
-        'Status: ${response.statusCode}.',
-      );
-    }
-
-    if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
-      throw Exception(
-        decoded is Map<String, dynamic>
-            ? decoded['message']?.toString() ?? 'Failed to save listing.'
-            : 'Failed to save listing.',
-      );
-    }
+    _ensureSuccess(
+      response,
+      decoded,
+      fallback: 'Failed to save listing.',
+    );
   }
 
   /// Remove a listing from the current user's favorites.
@@ -434,48 +346,25 @@ class ListingService {
     final accessToken = await AuthStorage.getAccessToken();
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('You must be logged in to manage saved listings.');
+      throw Exception(
+        'You must be logged in to manage saved listings.',
+      );
     }
 
-    final response = await http.delete(
+    final response = await ApiClient.delete(
       Uri.parse(ApiConstants.favoriteByListing(listingId)),
-      headers: {
+      headers: const {
         'Accept': 'application/json',
-        'Authorization': 'Bearer $accessToken',
       },
     );
 
-    dynamic decoded;
+    final decoded = _decode(response);
 
-    try {
-      decoded = jsonDecode(response.body);
-    } catch (_) {
-      throw Exception(
-        'Invalid server response. Status: ${response.statusCode}.',
-      );
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      if (decoded is Map<String, dynamic>) {
-        throw Exception(
-          decoded['message']?.toString() ?? 'Failed to remove saved listing.',
-        );
-      }
-
-      throw Exception(
-        'Failed to remove saved listing. '
-        'Status: ${response.statusCode}.',
-      );
-    }
-
-    if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
-      throw Exception(
-        decoded is Map<String, dynamic>
-            ? decoded['message']?.toString() ??
-                  'Failed to remove saved listing.'
-            : 'Failed to remove saved listing.',
-      );
-    }
+    _ensureSuccess(
+      response,
+      decoded,
+      fallback: 'Failed to remove saved listing.',
+    );
   }
 
   /// Fetch the current user's saved listings.
@@ -483,48 +372,28 @@ class ListingService {
     final accessToken = await AuthStorage.getAccessToken();
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('You must be logged in to view saved listings.');
+      throw Exception(
+        'You must be logged in to view saved listings.',
+      );
     }
 
-    final response = await http.get(
+    final response = await ApiClient.get(
       Uri.parse(ApiConstants.favorites),
-      headers: {
+      headers: const {
         'Accept': 'application/json',
-        'Authorization': 'Bearer $accessToken',
       },
     );
 
-    dynamic decoded;
+    final decoded = _decode(response);
 
-    try {
-      decoded = jsonDecode(response.body);
-    } catch (_) {
-      throw Exception(
-        'Invalid server response. Status: ${response.statusCode}.',
-      );
-    }
+    _ensureSuccess(
+      response,
+      decoded,
+      fallback: 'Failed to retrieve saved listings.',
+    );
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      if (decoded is Map<String, dynamic>) {
-        throw Exception(
-          decoded['message']?.toString() ??
-              'Failed to retrieve saved listings.',
-        );
-      }
-
-      throw Exception(
-        'Failed to retrieve saved listings. '
-        'Status: ${response.statusCode}.',
-      );
-    }
-
-    if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
-      throw Exception(
-        decoded is Map<String, dynamic>
-            ? decoded['message']?.toString() ??
-                  'Failed to retrieve saved listings.'
-            : 'Failed to retrieve saved listings.',
-      );
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Invalid saved listings response.');
     }
 
     final data = decoded['data'];
@@ -546,5 +415,44 @@ class ListingService {
         })
         .whereType<Listing>()
         .toList();
+  }
+
+  static dynamic _decode(http.Response response) {
+    if (response.body.isEmpty) {
+      return null;
+    }
+
+    try {
+      return jsonDecode(response.body);
+    } catch (_) {
+      throw Exception(
+        'Invalid server response. Status: ${response.statusCode}.',
+      );
+    }
+  }
+
+  static void _ensureSuccess(
+    http.Response response,
+    dynamic decoded, {
+    required String fallback,
+  }) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (decoded is Map<String, dynamic>) {
+        throw Exception(
+          decoded['message']?.toString() ?? fallback,
+        );
+      }
+
+      throw Exception(
+        '$fallback Status: ${response.statusCode}.',
+      );
+    }
+
+    if (decoded is Map<String, dynamic> &&
+        decoded['success'] != true) {
+      throw Exception(
+        decoded['message']?.toString() ?? fallback,
+      );
+    }
   }
 }

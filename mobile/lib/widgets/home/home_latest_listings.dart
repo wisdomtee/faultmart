@@ -48,7 +48,7 @@ class HomeLatestListings extends StatelessWidget {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 14,
-              childAspectRatio: 0.68,
+              childAspectRatio: 0.58,
             ),
             itemBuilder: (context, index) {
               final listing = listings[index];

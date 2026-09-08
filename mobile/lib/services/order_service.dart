@@ -4,20 +4,12 @@ import 'package:http/http.dart' as http;
 
 import '../core/constants/api_constants.dart';
 import '../models/order.dart';
-import 'auth_storage.dart';
+import 'api_client.dart';
 
 class OrderService {
-  static Future<String?> _token() async {
-    return AuthStorage.getAccessToken();
-  }
-
   static Future<Map<String, String>> _headers() async {
-    final token = await _token();
-
-    return {
+    return const {
       'Content-Type': 'application/json',
-      if (token != null && token.isNotEmpty)
-        'Authorization': 'Bearer $token',
     };
   }
 
@@ -45,7 +37,7 @@ class OrderService {
   }
 
   static Future<List<Order>> getMyOrders() async {
-    final response = await http.get(
+    final response = await ApiClient.get(
       Uri.parse(ApiConstants.orders),
       headers: await _headers(),
     );
@@ -77,7 +69,7 @@ class OrderService {
   }
 
   static Future<Order> getOrderById(String orderId) async {
-    final response = await http.get(
+    final response = await ApiClient.get(
       Uri.parse(ApiConstants.orderById(orderId)),
       headers: await _headers(),
     );
@@ -98,7 +90,7 @@ class OrderService {
   }
 
   static Future<Order> confirmReceipt(String orderId) async {
-    final response = await http.patch(
+    final response = await ApiClient.patch(
       Uri.parse(ApiConstants.confirmOrderReceipt(orderId)),
       headers: await _headers(),
     );
@@ -119,7 +111,7 @@ class OrderService {
   }
 
   static Future<Order> cancelOrder(String orderId) async {
-    final response = await http.patch(
+    final response = await ApiClient.patch(
       Uri.parse(ApiConstants.cancelOrder(orderId)),
       headers: await _headers(),
     );
@@ -143,7 +135,7 @@ class OrderService {
     String orderId,
     String status,
   ) async {
-    final response = await http.patch(
+    final response = await ApiClient.patch(
       Uri.parse(ApiConstants.updateOrderStatus(orderId)),
       headers: await _headers(),
       body: jsonEncode({

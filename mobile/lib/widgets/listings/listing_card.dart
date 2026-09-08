@@ -108,23 +108,25 @@ class _ListingCardState extends State<ListingCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Stack(
-                children: [
-                  SizedBox(
-                    height: 170,
-                    width: double.infinity,
-                    child: _buildImage(),
-                  ),
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: _FavoriteButton(
-                      isFavorited: _isFavorited,
-                      isLoading: _isFavoriteLoading,
-                      onPressed: _toggleFavorite,
-                    ),
-                  ),
-                ],
-              ),
+  children: [
+    SizedBox(
+      width: double.infinity,
+      child: AspectRatio(
+        aspectRatio: 1.25,
+        child: _buildImage(),
+      ),
+    ),
+    Positioned(
+      top: 10,
+      right: 10,
+      child: _FavoriteButton(
+        isFavorited: _isFavorited,
+        isLoading: _isFavoriteLoading,
+        onPressed: _toggleFavorite,
+      ),
+    ),
+  ],
+),
               Padding(
                 padding: const EdgeInsets.fromLTRB(13, 12, 13, 14),
                 child: Column(

@@ -8,6 +8,9 @@ import '../support/about_screen.dart';
 import '../support/contact_support_screen.dart';
 import '../support/help_center_screen.dart';
 import 'my_orders_screen.dart';
+import 'my_offers_screen.dart';
+import 'my_listings_screen.dart';
+import '../messages/messages_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key, required this.onNavigate});
@@ -190,17 +193,41 @@ class _AccountScreenState extends State<AccountScreen> {
           SliverToBoxAdapter(
             child: _AccountSection(
               children: [
+                  _AccountTile(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    title: 'Messages',
+                    subtitle: 'Chat with buyers and sellers',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const MessagesScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 _AccountTile(
                   icon: Icons.inventory_2_outlined,
                   title: 'My Listings',
                   subtitle: 'Manage items you have listed',
-                  onTap: () {},
+                  onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const MyListingsScreen(),
+                ),
+              );
+            },
                 ),
                 _AccountTile(
                   icon: Icons.local_offer_outlined,
                   title: 'My Offers',
                   subtitle: 'View offers you have made',
-                  onTap: () {},
+                  onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const MyOffersScreen(),
+                ),
+              );
+            },
                 ),
                 _AccountTile(
                   icon: Icons.shopping_bag_outlined,

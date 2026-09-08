@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/listing.dart';
 import '../../models/review.dart';
+import '../../services/auth_service.dart';
+import '../../services/conversation_service.dart';
 import '../../services/listing_service.dart';
 import '../../services/review_service.dart';
 import '../../widgets/reviews/review_widgets.dart';
+import '../auth/login_screen.dart';
+import '../messages/conversation_screen.dart';
 
 class ListingDetailsScreen extends StatefulWidget {
   const ListingDetailsScreen({super.key, required this.slug});
@@ -114,6 +118,74 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
     }
   }
 
+Future<void> _contactSeller(Listing listing) async {
+  final seller = listing.seller;
+
+  if (seller == null || seller.id.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Seller information is unavailable.'),
+      ),
+    );
+    return;
+  }
+
+  try {
+    final user = await AuthService.getCurrentUser();
+
+    if (!mounted) return;
+
+    if (user.id == seller.id) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'You cannot contact yourself about your own listing.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final conversation =
+        await ConversationService.createConversation(
+      listingId: listing.id,
+      sellerId: seller.id,
+    );
+
+    if (!mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ConversationScreen(
+          conversation: conversation,
+        ),
+      ),
+    );
+  } catch (error) {
+    if (!mounted) return;
+
+    final message = error
+        .toString()
+        .replaceFirst('Exception: ', '');
+
+    // If the user is not authenticated, take them through
+    // the normal login flow. No session is cleared here.
+    if (message.toLowerCase().contains('logged in') ||
+        message.toLowerCase().contains('must be logged')) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const LoginScreen(),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+}
+
   void _retry() {
     setState(() {
       _favoriteStatusLoaded = false;
@@ -157,11 +229,12 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
           _loadFavoriteStatus(listing.id);
 
           return _ListingDetailsContent(
-            listing: listing,
-            isFavorited: _isFavorited,
-            favoriteLoading: _favoriteLoading,
-            onFavoritePressed: () => _toggleFavorite(listing.id),
-          );
+  listing: listing,
+  isFavorited: _isFavorited,
+  favoriteLoading: _favoriteLoading,
+  onFavoritePressed: () => _toggleFavorite(listing.id),
+  onContactSeller: () => _contactSeller(listing),
+);
         },
       ),
     );
@@ -174,12 +247,14 @@ class _ListingDetailsContent extends StatelessWidget {
     required this.isFavorited,
     required this.favoriteLoading,
     required this.onFavoritePressed,
+    required this.onContactSeller,
   });
 
   final Listing listing;
   final bool isFavorited;
   final bool favoriteLoading;
   final VoidCallback onFavoritePressed;
+  final Future<void> Function() onContactSeller;
 
   @override
   Widget build(BuildContext context) {
@@ -387,13 +462,7 @@ class _ListingDetailsContent extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Contact seller coming next.'),
-                        ),
-                      );
-                    },
+                    onPressed: onContactSeller,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryRed,
                       foregroundColor: Colors.white,

@@ -560,7 +560,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
           crossAxisCount: 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 0.68,
+          childAspectRatio: 0.58,
         ),
         itemCount: _listings.length + (_isLoadingMore ? 2 : 0),
         itemBuilder: (context, index) {

@@ -1,52 +1,56 @@
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
 import { Role } from "@prisma/client";
 
-const accessSecret: Secret = process.env.JWT_ACCESS_SECRET as Secret;
-const refreshSecret: Secret = process.env.JWT_REFRESH_SECRET as Secret;
-
-
-const accessExpiresIn =
-  (process.env.ACCESS_TOKEN_EXPIRES || "15m") as SignOptions["expiresIn"];
-
-const refreshExpiresIn =
-  (process.env.REFRESH_TOKEN_EXPIRES || "30d") as SignOptions["expiresIn"];
-
 export interface JwtPayload {
   userId: string;
   email: string;
   role: Role;
 }
 
-export function generateAccessToken(
-  payload: JwtPayload
-): string {
-  return jwt.sign(
-    payload,
-    accessSecret as string,
-    {
-      expiresIn:
-        accessExpiresIn ?? "15m",
-    }
-  );
+function getAccessSecret(): Secret {
+  const secret = process.env.JWT_ACCESS_SECRET;
+
+  if (!secret) {
+    throw new Error("JWT_ACCESS_SECRET is not configured.");
+  }
+
+  return secret;
 }
 
-export function generateRefreshToken(
-  payload: JwtPayload
-): string {
-  return jwt.sign(
-    payload,
-    refreshSecret as string,
-    {
-      expiresIn:
-        refreshExpiresIn ?? "30d",
-    }
-  );
+function getRefreshSecret(): Secret {
+  const secret = process.env.JWT_REFRESH_SECRET;
+
+  if (!secret) {
+    throw new Error("JWT_REFRESH_SECRET is not configured.");
+  }
+
+  return secret;
+}
+
+function getAccessExpiresIn(): SignOptions["expiresIn"] {
+  return (process.env.ACCESS_TOKEN_EXPIRES || "15m") as SignOptions["expiresIn"];
+}
+
+function getRefreshExpiresIn(): SignOptions["expiresIn"] {
+  return (process.env.REFRESH_TOKEN_EXPIRES || "30d") as SignOptions["expiresIn"];
+}
+
+export function generateAccessToken(payload: JwtPayload): string {
+  return jwt.sign(payload, getAccessSecret(), {
+    expiresIn: getAccessExpiresIn(),
+  });
+}
+
+export function generateRefreshToken(payload: JwtPayload): string {
+  return jwt.sign(payload, getRefreshSecret(), {
+    expiresIn: getRefreshExpiresIn(),
+  });
 }
 
 export function verifyAccessToken(token: string): JwtPayload {
-  return jwt.verify(token, accessSecret) as JwtPayload;
+  return jwt.verify(token, getAccessSecret()) as JwtPayload;
 }
 
 export function verifyRefreshToken(token: string): JwtPayload {
-  return jwt.verify(token, refreshSecret) as JwtPayload;
+  return jwt.verify(token, getRefreshSecret()) as JwtPayload;
 }

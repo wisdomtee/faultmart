@@ -22,6 +22,11 @@ class AIService {
   }) {
     const response = await openrouter.chat.completions.create({
       model: "openrouter/free",
+
+      response_format: {
+        type: "json_object",
+      },
+
       messages: [
         {
           role: "system",
@@ -46,7 +51,9 @@ Rules:
 - If information is insufficient to determine something,
   say that more information is needed.
 
-Return ONLY valid JSON with this exact structure:
+You MUST return a JSON object.
+
+The JSON object MUST contain exactly these fields:
 
 {
   "suggestedTitle": "string",
@@ -54,13 +61,19 @@ Return ONLY valid JSON with this exact structure:
   "suggestedFaultSeverity": "MINOR | MODERATE | MAJOR | CRITICAL | null",
   "suggestions": ["string"]
 }
-          `.trim(),
+
+Do not return markdown.
+Do not return code fences.
+Do not return explanations outside the JSON object.
+Do not return safety labels outside the JSON object.
+`.trim(),
         },
         {
           role: "user",
           content: JSON.stringify(data),
         },
       ],
+
       temperature: 0.3,
     });
 
@@ -70,12 +83,47 @@ Return ONLY valid JSON with this exact structure:
       throw new Error("AI returned an empty response.");
     }
 
+    console.log("AI RAW RESPONSE:", text);
+
+    let parsed: unknown;
+
     try {
-      return JSON.parse(text);
+      parsed = JSON.parse(text);
     } catch {
-      console.error("AI RAW RESPONSE:", text);
-      throw new Error("AI returned an invalid response.");
+      throw new Error("AI returned an invalid JSON response.");
     }
+
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      throw new Error("AI returned an invalid response structure.");
+    }
+
+    const result = parsed as Record<string, unknown>;
+
+    if (
+      typeof result.suggestedTitle !== "string" ||
+      typeof result.improvedDescription !== "string" ||
+      !(
+        result.suggestedFaultSeverity === null ||
+        typeof result.suggestedFaultSeverity === "string"
+      ) ||
+      !Array.isArray(result.suggestions) ||
+      !result.suggestions.every(
+        (suggestion) => typeof suggestion === "string"
+      )
+    ) {
+      throw new Error("AI returned an invalid response structure.");
+    }
+
+    return {
+      suggestedTitle: result.suggestedTitle,
+      improvedDescription: result.improvedDescription,
+      suggestedFaultSeverity: result.suggestedFaultSeverity,
+      suggestions: result.suggestions,
+    };
   }
 }
 

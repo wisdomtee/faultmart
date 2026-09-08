@@ -68,14 +68,19 @@ class ListingService {
 
     try {
       /**
-       * Upload images first.
+       * Upload images before opening the database transaction.
        */
       if (files.length > 0) {
         uploadedImages =
           await uploadService.uploadImages(files);
       }
 
-      return await prisma.$transaction(
+      /**
+       * Keep the database transaction focused only on
+       * the actual writes. Relation loading happens after
+       * the transaction has completed.
+       */
+      const listing = await prisma.$transaction(
         async (tx) => {
           /**
            * Verify category exists.
@@ -84,6 +89,9 @@ class ListingService {
             await tx.category.findUnique({
               where: {
                 id: data.categoryId,
+              },
+              select: {
+                id: true,
               },
             });
 
@@ -101,83 +109,78 @@ class ListingService {
             await this.generateSlug(data.title);
 
           /**
-           * Create listing.
+           * Create listing and images.
            */
-          const listing =
-            await tx.listing.create({
-              data: {
-                sellerId,
-
-                categoryId: data.categoryId,
-
-                title: data.title,
-
-                slug,
-
-                description: data.description,
-
-                price: new Prisma.Decimal(
-                  data.price
+          return tx.listing.create({
+            data: {
+              sellerId,
+              categoryId: data.categoryId,
+              title: data.title,
+              slug,
+              description: data.description,
+              price: new Prisma.Decimal(
+                data.price
+              ),
+              currency:
+                data.currency ?? Currency.NGN,
+              condition: data.condition,
+              faultSeverity:
+                data.faultSeverity,
+              faultDescription:
+                data.faultDescription,
+              location: data.location,
+              state: data.state,
+              city: data.city,
+              isNegotiable:
+                typeof data.negotiable === "string"
+                  ? data.negotiable === "true"
+                  : data.negotiable ?? true,
+              status: ListingStatus.ACTIVE,
+              images: {
+                create: uploadedImages.map(
+                  (image, index) => ({
+                    url: image.url,
+                    publicId: image.publicId,
+                    position: index,
+                  })
                 ),
-
-                currency:
-                  data.currency ?? Currency.NGN,
-
-                condition: data.condition,
-
-                faultSeverity:
-                  data.faultSeverity,
-
-                faultDescription:
-                  data.faultDescription,
-
-                location: data.location,
-
-                state: data.state,
-
-                city: data.city,
-
-                isNegotiable:
-  typeof data.negotiable === "string"
-    ? data.negotiable === "true"
-    : data.negotiable ?? true,
-                status: ListingStatus.ACTIVE,
-
-                images: {
-                  create: uploadedImages.map(
-                    (image, index) => ({
-                      url: image.url,
-                      publicId: image.publicId,
-                      position: index,
-                    })
-                  ),
-                },
               },
-
-              include: {
-                category: true,
-
-                images: true,
-
-                seller: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    username: true,
-                    profileImage: true,
-                  },
-                },
-              },
-            });
-
-          return listing;
+            },
+          });
+        },
+        {
+          maxWait: 10000,
+          timeout: 15000,
         }
       );
+
+      /**
+       * Load the complete listing after the transaction
+       * has successfully committed.
+       */
+      return await prisma.listing.findUniqueOrThrow({
+        where: {
+          id: listing.id,
+        },
+        include: {
+          category: true,
+          images: true,
+          seller: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true,
+              profileImage: true,
+            },
+          },
+        },
+      });
     } catch (error) {
       /**
-       * If database creation fails after
-       * Cloudinary upload, remove uploaded images.
+       * If database creation fails after Cloudinary upload,
+       * remove uploaded images so we do not leave orphaned
+       * files in Cloudinary.
        */
       if (uploadedImages.length > 0) {
         await uploadService.deleteImages(

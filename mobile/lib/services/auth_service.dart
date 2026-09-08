@@ -21,7 +21,7 @@ class AuthService {
   }) async {
     final response = await _client.post(
       Uri.parse(ApiConstants.register),
-      headers: {
+      headers: const {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
@@ -46,7 +46,7 @@ class AuthService {
   }) async {
     final response = await _client.post(
       Uri.parse(ApiConstants.login),
-      headers: {
+      headers: const {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
@@ -62,25 +62,59 @@ class AuthService {
     return result;
   }
 
-static Future<User?> restoreSession() async {
-  final accessToken = await getAccessToken();
+  static Future<Map<String, dynamic>> forgotPassword({
+    required String email,
+  }) async {
+    final response = await _client.post(
+      Uri.parse(ApiConstants.forgotPassword),
+      headers: const {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email.trim().toLowerCase(),
+      }),
+    );
 
-  if (accessToken == null || accessToken.isEmpty) {
-    return null;
+    return _handleResponse(response);
   }
 
-  try {
-    return await getCurrentUser();
-  } catch (_) {
-    try {
-      await refresh();
-      return await getCurrentUser();
-    } catch (_) {
-      await clearSession();
+  static Future<Map<String, dynamic>> resetPassword({
+    required String token,
+    required String password,
+  }) async {
+    final response = await _client.post(
+      Uri.parse(ApiConstants.resetPassword),
+      headers: const {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'token': token,
+        'password': password,
+      }),
+    );
+
+    return _handleResponse(response);
+  }
+
+  static Future<User?> restoreSession() async {
+    final accessToken = await getAccessToken();
+
+    if (accessToken == null || accessToken.isEmpty) {
       return null;
     }
+
+    try {
+      return await getCurrentUser();
+    } catch (_) {
+      try {
+        await refresh();
+        return await getCurrentUser();
+      } catch (_) {
+        await clearSession();
+        return null;
+      }
+    }
   }
-}
 
   static Future<String?> getAccessToken() async {
     return AuthStorage.getAccessToken();
@@ -88,18 +122,16 @@ static Future<User?> restoreSession() async {
 
   static Future<bool> isLoggedIn() async {
     final accessToken = await getAccessToken();
-
     return accessToken != null && accessToken.isNotEmpty;
   }
 
   static Future<Map<String, dynamic>> me({
     required String accessToken,
   }) async {
-    final response = await _client.get(
+    final response = await ApiClient.get(
       Uri.parse(ApiConstants.me),
-      headers: {
+      headers: const {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $accessToken',
       },
     );
 
@@ -107,29 +139,29 @@ static Future<User?> restoreSession() async {
   }
 
   static Future<User> getCurrentUser() async {
-  final accessToken = await getAccessToken();
+    final accessToken = await getAccessToken();
 
-  if (accessToken == null || accessToken.isEmpty) {
-    throw Exception('You must be logged in.');
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('You must be logged in.');
+    }
+
+    final result = await me(accessToken: accessToken);
+
+    final data = result['user'];
+
+    if (data is! Map) {
+      throw Exception('Invalid user data returned by server.');
+    }
+
+    return User.fromJson(
+      Map<String, dynamic>.from(data),
+    );
   }
-
-  final result = await me(accessToken: accessToken);
-
-  final data = result['user'];
-
-  if (data is! Map) {
-    throw Exception('Invalid user data returned by server.');
-  }
-
-  return User.fromJson(
-    Map<String, dynamic>.from(data),
-  );
-}
 
   static Future<Map<String, dynamic>> refresh() async {
     final response = await _client.post(
       Uri.parse(ApiConstants.refresh),
-      headers: {
+      headers: const {
         'Content-Type': 'application/json',
       },
     );
@@ -143,13 +175,14 @@ static Future<User?> restoreSession() async {
 
   static Future<void> clearSession() async {
     await AuthStorage.clear();
+    ApiClient.clearCookies();
   }
 
   static Future<Map<String, dynamic>> logout() async {
     try {
       final response = await _client.post(
         Uri.parse(ApiConstants.logout),
-        headers: {
+        headers: const {
           'Content-Type': 'application/json',
         },
       );
