@@ -14,6 +14,7 @@ class ApiConstants {
   static const String refresh = '$baseUrl/api/auth/refresh';
   static const String logout = '$baseUrl/api/auth/logout';
     static const String me = '$baseUrl/api/auth/me';
+    static const String categories = '$baseUrl/api/categories';
     static const String forgotPassword =
         '$baseUrl/api/auth/forgot-password';
     static const String resetPassword =

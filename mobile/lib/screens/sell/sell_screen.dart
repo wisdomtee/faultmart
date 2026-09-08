@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/listing.dart';
 import '../../services/ai_service.dart';
 import '../../services/listing_service.dart';
+import '../../services/category_service.dart';
 
 class SellScreen extends StatefulWidget {
   const SellScreen({super.key});
@@ -49,7 +50,9 @@ class _SellScreenState extends State<SellScreen> {
    * We will replace this with a real category API
    * once the mobile category flow is implemented.
    */
-  static const String _carsCategoryId = '07e66b22-9646-44bb-a4fd-6ce53e4b721c';
+  List<ListingCategory> _categories = [];
+bool _isLoadingCategories = true;
+String? _categoryError;
 
   @override
   void dispose() {
@@ -100,6 +103,43 @@ class _SellScreenState extends State<SellScreen> {
     });
   }
 
+Future<void> _loadCategories() async {
+  try {
+    final categories = await CategoryService.getCategories();
+
+    if (!mounted) return;
+
+    setState(() {
+      _categories = categories;
+      _isLoadingCategories = false;
+      _categoryError = null;
+    });
+  } catch (error) {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingCategories = false;
+      _categoryError = error.toString();
+    });
+  }
+}
+
+@override
+void initState() {
+  super.initState();
+  _loadCategories();
+}
+
+  String? _selectedCategoryName() {
+    for (final category in _categories) {
+      if (category.id == _categoryId) {
+        return category.name;
+      }
+    }
+
+    return null;
+  }
+
   Future<void> _generateAiSuggestions() async {
     FocusScope.of(context).unfocus();
 
@@ -124,7 +164,7 @@ class _SellScreenState extends State<SellScreen> {
       final result = await AiService.generateListingAssistant(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
-        category: _categoryId == _carsCategoryId ? 'Cars' : null,
+        category: _selectedCategoryName(),
         condition: _condition,
         faultSeverity: _faultSeverity,
         faultDescription: _faultDescriptionController.text.trim(),
@@ -377,24 +417,45 @@ class _SellScreenState extends State<SellScreen> {
               const SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
-                initialValue: _categoryId,
-                decoration: _inputDecoration(label: 'Category'),
-                items: const [
-                  DropdownMenuItem(value: _carsCategoryId, child: Text('Cars')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _categoryId = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'Select a category.';
-                  }
+  initialValue: _categoryId,
+  decoration: _inputDecoration(
+    label: 'Category',
+  ).copyWith(
+    helperText: _isLoadingCategories
+        ? 'Loading categories...'
+        : _categoryError,
+    helperStyle: _categoryError != null
+        ? const TextStyle(color: Colors.red)
+        : null,
+  ),
+  hint: Text(
+    _isLoadingCategories
+        ? 'Loading categories...'
+        : 'Select a category',
+  ),
+  items: _categories
+      .map(
+        (category) => DropdownMenuItem<String>(
+          value: category.id,
+          child: Text(category.name),
+        ),
+      )
+      .toList(),
+  onChanged: _isLoadingCategories
+      ? null
+      : (value) {
+          setState(() {
+            _categoryId = value;
+          });
+        },
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return 'Select a category.';
+    }
 
-                  return null;
-                },
-              ),
+    return null;
+  },
+),
 
               const SizedBox(height: 16),
 
