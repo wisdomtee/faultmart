@@ -5,6 +5,9 @@ import {
 
 import { AppError } from "../../utils/AppError";
 
+import eventEmitter from "../../events/eventEmitter";
+import { AppEvent } from "../../events/event.types";
+
 const prisma = new PrismaClient();
 
 class MessageService {
@@ -62,6 +65,31 @@ class MessageService {
         updatedAt: new Date(),
       },
     });
+
+      const recipients =
+        await prisma.conversationParticipant.findMany({
+          where: {
+            conversationId: data.conversationId,
+            userId: {
+              not: senderId,
+            },
+          },
+          select: {
+            userId: true,
+          },
+        });
+
+      for (const recipient of recipients) {
+        eventEmitter.emit(
+          AppEvent.MESSAGE_RECEIVED,
+          {
+            userId: recipient.userId,
+            title: `New message from ${message.sender.firstName}`,
+            message: message.content,
+            referenceId: data.conversationId,
+          }
+        );
+      }
 
     return message;
   }

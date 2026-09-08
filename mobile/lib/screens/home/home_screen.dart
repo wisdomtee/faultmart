@@ -7,6 +7,7 @@ import '../../widgets/home/home_cta.dart';
 import '../../widgets/home/home_featured_listings.dart';
 import '../../widgets/home/home_footer.dart';
 import '../../widgets/home/home_header.dart';
+import '../profile/notifications_screen.dart';
 import '../../widgets/home/home_hero.dart';
 import '../../widgets/home/home_how_it_works.dart';
 import '../../widgets/home/home_latest_listings.dart';
@@ -22,7 +23,7 @@ class HomeScreen extends StatefulWidget {
     required this.onFooterAction,
   });
 
-  final ValueChanged<int> onNavigate;
+  final void Function(int index, {String? search}) onNavigate;
   final ValueChanged<FooterAction> onFooterAction;
 
   @override
@@ -123,7 +124,18 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const HomeHeader(),
+                HomeHeader(
+                  onNotifications: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationsScreen(),
+                      ),
+                    );
+                  },
+                  onAccount: () {
+                    widget.onNavigate(4);
+                  },
+                ),
 
                 HomeHero(
                   onBrowseListings: () {
@@ -134,7 +146,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
 
-                const HomeSearch(),
+                HomeSearch(
+                  onSearch: (query) => widget.onNavigate(1, search: query),
+                ),
 
                 HomeCategories(categories: homepage.categories),
 

@@ -71,9 +71,7 @@ class _AccountScreenState extends State<AccountScreen> {
       if (!mounted) return;
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
       );
     } catch (error) {
@@ -86,9 +84,7 @@ class _AccountScreenState extends State<AccountScreen> {
       if (!mounted) return;
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
       );
     } finally {
@@ -101,27 +97,21 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   void _openHelpCenter() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const HelpCenterScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const HelpCenterScreen()));
   }
 
   void _openContactSupport() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const ContactSupportScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ContactSupportScreen()));
   }
 
   void _openAbout() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const AboutScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AboutScreen()));
   }
 
   @override
@@ -193,41 +183,37 @@ class _AccountScreenState extends State<AccountScreen> {
           SliverToBoxAdapter(
             child: _AccountSection(
               children: [
-                  _AccountTile(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    title: 'Messages',
-                    subtitle: 'Chat with buyers and sellers',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const MessagesScreen(),
-                        ),
-                      );
-                    },
-                  ),
+                _AccountTile(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  title: 'Messages',
+                  subtitle: 'Chat with buyers and sellers',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const MessagesScreen()),
+                    );
+                  },
+                ),
                 _AccountTile(
                   icon: Icons.inventory_2_outlined,
                   title: 'My Listings',
                   subtitle: 'Manage items you have listed',
                   onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MyListingsScreen(),
-                ),
-              );
-            },
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const MyListingsScreen(),
+                      ),
+                    );
+                  },
                 ),
                 _AccountTile(
                   icon: Icons.local_offer_outlined,
                   title: 'My Offers',
                   subtitle: 'View offers you have made',
                   onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MyOffersScreen(),
-                ),
-              );
-            },
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const MyOffersScreen()),
+                    );
+                  },
                 ),
                 _AccountTile(
                   icon: Icons.shopping_bag_outlined,
@@ -236,9 +222,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => const MyOrdersScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const MyOrdersScreen()),
                     );
                   },
                 ),
@@ -306,9 +290,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         ),
                       )
                     : const Icon(Icons.logout_rounded),
-                label: Text(
-                  _isLoggingOut ? 'Signing Out...' : 'Sign Out',
-                ),
+                label: Text(_isLoggingOut ? 'Signing Out...' : 'Sign Out'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.primaryRed,
                   side: BorderSide(
@@ -341,9 +323,7 @@ class _AccountScreenState extends State<AccountScreen> {
             height: 64,
             child: CircleAvatar(
               backgroundColor: Colors.white,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
           SizedBox(width: 14),
@@ -454,10 +434,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 SizedBox(height: 4),
                 Text(
                   'Unable to load account information',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.mutedText,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppTheme.mutedText),
                 ),
               ],
             ),
@@ -480,9 +457,7 @@ class _AccountSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.black.withValues(alpha: 0.06),
-        ),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: Column(children: children),
     );
@@ -507,10 +482,7 @@ class _AccountTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 15,
-          vertical: 14,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
         child: Row(
           children: [
             Container(
@@ -520,11 +492,7 @@ class _AccountTile extends StatelessWidget {
                 color: AppTheme.lightBackground,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: AppTheme.primaryRed,
-                size: 21,
-              ),
+              child: Icon(icon, color: AppTheme.primaryRed, size: 21),
             ),
             const SizedBox(width: 13),
             Expanded(

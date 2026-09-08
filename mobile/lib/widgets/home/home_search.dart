@@ -2,8 +2,42 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 
-class HomeSearch extends StatelessWidget {
-  const HomeSearch({super.key});
+class HomeSearch extends StatefulWidget {
+  const HomeSearch({super.key, required this.onSearch});
+
+  final ValueChanged<String> onSearch;
+
+  @override
+  State<HomeSearch> createState() => _HomeSearchState();
+}
+
+class _HomeSearchState extends State<HomeSearch> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submitSearch([String? value]) {
+    final query = (value ?? _controller.text).trim();
+
+    if (query.isEmpty) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+    widget.onSearch(query);
+  }
+
+  void _quickSearch(String query) {
+    _controller.text = query;
+    _controller.selection = TextSelection.collapsed(
+      offset: _controller.text.length,
+    );
+    _submitSearch(query);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +67,6 @@ class HomeSearch extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-
-          // Search field
           Container(
             height: 54,
             decoration: BoxDecoration(
@@ -43,7 +75,9 @@ class HomeSearch extends StatelessWidget {
               border: Border.all(color: const Color(0xFFE5E5E5)),
             ),
             child: TextField(
+              controller: _controller,
               textInputAction: TextInputAction.search,
+              onSubmitted: _submitSearch,
               decoration: InputDecoration(
                 hintText: 'Search vehicles, phones, electronics...',
                 hintStyle: const TextStyle(
@@ -57,15 +91,21 @@ class HomeSearch extends StatelessWidget {
                 ),
                 suffixIcon: Padding(
                   padding: const EdgeInsets.all(7),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.darkText,
+                  child: Material(
+                    color: AppTheme.darkText,
+                    borderRadius: BorderRadius.circular(9),
+                    child: InkWell(
                       borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: const Icon(
-                      Icons.tune_rounded,
-                      color: Colors.white,
-                      size: 18,
+                      onTap: () => _submitSearch(),
+                      child: const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Icon(
+                          Icons.search_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -77,32 +117,33 @@ class HomeSearch extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 12),
-
-          // Quick filters
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: const [
+              children: [
                 _SearchFilter(
                   icon: Icons.directions_car_outlined,
                   label: 'Vehicles',
+                  onTap: () => _quickSearch('vehicle'),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 _SearchFilter(
                   icon: Icons.phone_android_outlined,
                   label: 'Phones',
+                  onTap: () => _quickSearch('phone'),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 _SearchFilter(
                   icon: Icons.devices_other_outlined,
                   label: 'Electronics',
+                  onTap: () => _quickSearch('electronics'),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 _SearchFilter(
                   icon: Icons.kitchen_outlined,
                   label: 'Appliances',
+                  onTap: () => _quickSearch('appliance'),
                 ),
               ],
             ),
@@ -114,38 +155,50 @@ class HomeSearch extends StatelessWidget {
 }
 
 class _SearchFilter extends StatelessWidget {
-  const _SearchFilter({required this.icon, required this.label});
+  const _SearchFilter({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF7F0),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppTheme.primaryOrange.withValues(alpha: 0.18),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.circle, size: 5, color: AppTheme.primaryOrange),
-          const SizedBox(width: 6),
-          Icon(icon, size: 15, color: AppTheme.darkText),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppTheme.darkText,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF7F0),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: AppTheme.primaryOrange.withValues(alpha: 0.18),
             ),
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.circle, size: 5, color: AppTheme.primaryOrange),
+              const SizedBox(width: 6),
+              Icon(icon, size: 15, color: AppTheme.darkText),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppTheme.darkText,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

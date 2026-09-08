@@ -10,6 +10,7 @@ import '../../services/review_service.dart';
 import '../../widgets/reviews/review_widgets.dart';
 import '../auth/login_screen.dart';
 import '../messages/conversation_screen.dart';
+import 'edit_listing_screen.dart';
 
 class ListingDetailsScreen extends StatefulWidget {
   const ListingDetailsScreen({super.key, required this.slug});
@@ -21,6 +22,7 @@ class ListingDetailsScreen extends StatefulWidget {
 }
 
 class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
+  bool _isOwner = false;
   late Future<Listing> _listingFuture;
 
   bool _isFavorited = false;
@@ -118,73 +120,64 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
     }
   }
 
-Future<void> _contactSeller(Listing listing) async {
-  final seller = listing.seller;
+  Future<void> _contactSeller(Listing listing) async {
+    final seller = listing.seller;
 
-  if (seller == null || seller.id.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Seller information is unavailable.'),
-      ),
-    );
-    return;
-  }
-
-  try {
-    final user = await AuthService.getCurrentUser();
-
-    if (!mounted) return;
-
-    if (user.id == seller.id) {
+    if (seller == null || seller.id.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'You cannot contact yourself about your own listing.',
-          ),
-        ),
+        const SnackBar(content: Text('Seller information is unavailable.')),
       );
       return;
     }
 
-    final conversation =
-        await ConversationService.createConversation(
-      listingId: listing.id,
-      sellerId: seller.id,
-    );
+    try {
+      final user = await AuthService.getCurrentUser();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ConversationScreen(
-          conversation: conversation,
-        ),
-      ),
-    );
-  } catch (error) {
-    if (!mounted) return;
+      if (user.id == seller.id) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'You cannot contact yourself about your own listing.',
+            ),
+          ),
+        );
+        return;
+      }
 
-    final message = error
-        .toString()
-        .replaceFirst('Exception: ', '');
+      final conversation = await ConversationService.createConversation(
+        listingId: listing.id,
+        sellerId: seller.id,
+      );
 
-    // If the user is not authenticated, take them through
-    // the normal login flow. No session is cleared here.
-    if (message.toLowerCase().contains('logged in') ||
-        message.toLowerCase().contains('must be logged')) {
+      if (!mounted) return;
+
       await Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
+          builder: (_) => ConversationScreen(conversation: conversation),
         ),
       );
-      return;
-    }
+    } catch (error) {
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+      final message = error.toString().replaceFirst('Exception: ', '');
+
+      // If the user is not authenticated, take them through
+      // the normal login flow. No session is cleared here.
+      if (message.toLowerCase().contains('logged in') ||
+          message.toLowerCase().contains('must be logged')) {
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
   }
-}
 
   void _retry() {
     setState(() {
@@ -229,12 +222,28 @@ Future<void> _contactSeller(Listing listing) async {
           _loadFavoriteStatus(listing.id);
 
           return _ListingDetailsContent(
-  listing: listing,
-  isFavorited: _isFavorited,
-  favoriteLoading: _favoriteLoading,
-  onFavoritePressed: () => _toggleFavorite(listing.id),
-  onContactSeller: () => _contactSeller(listing),
-);
+            isOwner: _isOwner,
+            listing: listing,
+
+            onEdit: () async {
+              final updatedListing = await Navigator.of(context).push<Listing>(
+                MaterialPageRoute(
+                  builder: (_) => EditListingScreen(listing: listing),
+                ),
+              );
+
+              if (!mounted || updatedListing == null) return;
+
+              setState(() {
+                _listingFuture = Future.value(updatedListing);
+                _isOwner = true;
+              });
+            },
+            isFavorited: _isFavorited,
+            favoriteLoading: _favoriteLoading,
+            onFavoritePressed: () => _toggleFavorite(listing.id),
+            onContactSeller: () => _contactSeller(listing),
+          );
         },
       ),
     );
@@ -242,7 +251,13 @@ Future<void> _contactSeller(Listing listing) async {
 }
 
 class _ListingDetailsContent extends StatelessWidget {
+  final bool isOwner;
+  final VoidCallback onEdit;
+
   const _ListingDetailsContent({
+    required this.isOwner,
+    required this.onEdit,
+
     required this.listing,
     required this.isFavorited,
     required this.favoriteLoading,

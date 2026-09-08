@@ -31,16 +31,12 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Listings'),
-      ),
+      appBar: AppBar(title: const Text('My Listings')),
       body: FutureBuilder<List<Listing>>(
         future: _listingsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -61,10 +57,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: const [
                   SizedBox(height: 180),
-                  Icon(
-                    Icons.inventory_2_outlined,
-                    size: 64,
-                  ),
+                  Icon(Icons.inventory_2_outlined, size: 64),
                   SizedBox(height: 16),
                   Center(
                     child: Text(
@@ -74,9 +67,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   ),
                   SizedBox(height: 8),
                   Center(
-                    child: Text(
-                      'Create your first listing from the Sell tab.',
-                    ),
+                    child: Text('Create your first listing from the Sell tab.'),
                   ),
                 ],
               ),
@@ -101,9 +92,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 }
 
 class _ListingCard extends StatelessWidget {
-  const _ListingCard({
-    required this.listing,
-  });
+  const _ListingCard({required this.listing});
 
   final Listing listing;
 
@@ -126,14 +115,10 @@ class _ListingCard extends StatelessWidget {
                 ? Image.network(
                     imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.image_not_supported_outlined,
-                    ),
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.image_not_supported_outlined),
                   )
-                : const Icon(
-                    Icons.image_outlined,
-                    size: 36,
-                  ),
+                : const Icon(Icons.image_outlined, size: 36),
           ),
         ),
         title: Text(
@@ -153,10 +138,7 @@ class _ListingCard extends StatelessWidget {
 }
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -169,17 +151,11 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 56,
-            ),
+            const Icon(Icons.error_outline, size: 56),
             const SizedBox(height: 16),
             const Text(
               'Could not load your listings.',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -190,10 +166,7 @@ class _ErrorState extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Try Again'),
-            ),
+            ElevatedButton(onPressed: onRetry, child: const Text('Try Again')),
           ],
         ),
       ),

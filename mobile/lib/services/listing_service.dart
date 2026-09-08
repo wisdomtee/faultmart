@@ -21,11 +21,7 @@ class ListingService {
 
     final decoded = _decode(response);
 
-    _ensureSuccess(
-      response,
-      decoded,
-      fallback: 'Failed to retrieve homepage.',
-    );
+    _ensureSuccess(response, decoded, fallback: 'Failed to retrieve homepage.');
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception('Invalid server response.');
@@ -90,11 +86,7 @@ class ListingService {
 
     final decoded = _decode(response);
 
-    _ensureSuccess(
-      response,
-      decoded,
-      fallback: 'Failed to retrieve listings.',
-    );
+    _ensureSuccess(response, decoded, fallback: 'Failed to retrieve listings.');
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception('Invalid server response.');
@@ -113,9 +105,7 @@ class ListingService {
   static Future<List<Listing>> getMyListings() async {
     final response = await ApiClient.get(
       Uri.parse(ApiConstants.myListings),
-      headers: const {
-        'Accept': 'application/json',
-      },
+      headers: const {'Accept': 'application/json'},
     );
 
     final decoded = _decode(response);
@@ -167,78 +157,63 @@ class ListingService {
       throw Exception('You must be logged in to create a listing.');
     }
 
-    final streamedResponse = await ApiClient.sendMultipart(
-      (token) async {
-        final request = http.MultipartRequest(
-          'POST',
-          Uri.parse(ApiConstants.listings),
+    final streamedResponse = await ApiClient.sendMultipart((token) async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ApiConstants.listings),
+      );
+
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+
+      request.fields.addAll({
+        'title': title,
+        'description': description,
+        'categoryId': categoryId,
+        'price': price.toString(),
+        'currency': currency,
+        'condition': condition,
+        'negotiable': negotiable.toString(),
+      });
+
+      if (faultSeverity != null && faultSeverity.trim().isNotEmpty) {
+        request.fields['faultSeverity'] = faultSeverity.trim();
+      }
+
+      if (faultDescription != null && faultDescription.trim().isNotEmpty) {
+        request.fields['faultDescription'] = faultDescription.trim();
+      }
+
+      if (location != null && location.trim().isNotEmpty) {
+        request.fields['location'] = location.trim();
+      }
+
+      if (state != null && state.trim().isNotEmpty) {
+        request.fields['state'] = state.trim();
+      }
+
+      if (city != null && city.trim().isNotEmpty) {
+        request.fields['city'] = city.trim();
+      }
+
+      for (final image in images.take(10)) {
+        final bytes = await image.readAsBytes();
+
+        request.files.add(
+          http.MultipartFile.fromBytes('images', bytes, filename: image.name),
         );
+      }
 
-        request.headers.addAll({
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        });
+      return request;
+    });
 
-        request.fields.addAll({
-          'title': title,
-          'description': description,
-          'categoryId': categoryId,
-          'price': price.toString(),
-          'currency': currency,
-          'condition': condition,
-          'negotiable': negotiable.toString(),
-        });
-
-        if (faultSeverity != null &&
-            faultSeverity.trim().isNotEmpty) {
-          request.fields['faultSeverity'] = faultSeverity.trim();
-        }
-
-        if (faultDescription != null &&
-            faultDescription.trim().isNotEmpty) {
-          request.fields['faultDescription'] =
-              faultDescription.trim();
-        }
-
-        if (location != null && location.trim().isNotEmpty) {
-          request.fields['location'] = location.trim();
-        }
-
-        if (state != null && state.trim().isNotEmpty) {
-          request.fields['state'] = state.trim();
-        }
-
-        if (city != null && city.trim().isNotEmpty) {
-          request.fields['city'] = city.trim();
-        }
-
-        for (final image in images.take(10)) {
-          final bytes = await image.readAsBytes();
-
-          request.files.add(
-            http.MultipartFile.fromBytes(
-              'images',
-              bytes,
-              filename: image.name,
-            ),
-          );
-        }
-
-        return request;
-      },
-    );
-
-    final response = await http.Response.fromStream(
-      streamedResponse,
-    );
+    final response = await http.Response.fromStream(streamedResponse);
 
     final decoded = _decode(response);
 
-    _ensureSuccess(
-      response,
-      decoded,
-      fallback: 'Failed to create listing.',
-    );
+    _ensureSuccess(response, decoded, fallback: 'Failed to create listing.');
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception('Invalid server response.');
@@ -262,11 +237,7 @@ class ListingService {
 
     final decoded = _decode(response);
 
-    _ensureSuccess(
-      response,
-      decoded,
-      fallback: 'Failed to retrieve listing.',
-    );
+    _ensureSuccess(response, decoded, fallback: 'Failed to retrieve listing.');
 
     if (decoded is! Map<String, dynamic>) {
       throw Exception('Invalid server response.');
@@ -276,6 +247,88 @@ class ListingService {
 
     if (data is! Map<String, dynamic>) {
       throw Exception('Invalid listing data returned by server.');
+    }
+
+    return Listing.fromJson(data);
+  }
+
+  /// Update an existing listing owned by the current user.
+  ///
+  /// The backend accepts multipart/form-data so sellers can update
+  /// listing fields and optionally replace the listing images.
+  static Future<Listing> updateListing({
+    required String listingId,
+    required String title,
+    required String description,
+    required String categoryId,
+    required double price,
+    required String currency,
+    required String condition,
+    required String faultSeverity,
+    required String faultDescription,
+    required String location,
+    required String state,
+    required String city,
+    required bool negotiable,
+    List<XFile> images = const [],
+  }) async {
+    final accessToken = await AuthStorage.getAccessToken();
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('You must be logged in to update a listing.');
+    }
+
+    final streamedResponse = await ApiClient.sendMultipart((token) async {
+      final request = http.MultipartRequest(
+        'PUT',
+        Uri.parse(ApiConstants.updateListing(listingId)),
+      );
+
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+
+      request.fields.addAll({
+        'title': title.trim(),
+        'description': description.trim(),
+        'categoryId': categoryId,
+        'price': price.toString(),
+        'currency': currency,
+        'condition': condition,
+        'faultSeverity': faultSeverity,
+        'faultDescription': faultDescription.trim(),
+        'location': location.trim(),
+        'state': state.trim(),
+        'city': city.trim(),
+        'negotiable': negotiable.toString(),
+      });
+
+      for (final image in images.take(10)) {
+        final bytes = await image.readAsBytes();
+
+        request.files.add(
+          http.MultipartFile.fromBytes('images', bytes, filename: image.name),
+        );
+      }
+
+      return request;
+    });
+
+    final response = await http.Response.fromStream(streamedResponse);
+
+    final decoded = _decode(response);
+
+    _ensureSuccess(response, decoded, fallback: 'Failed to update listing.');
+
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Invalid update listing response.');
+    }
+
+    final data = decoded['data'];
+
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid updated listing data returned by server.');
     }
 
     return Listing.fromJson(data);
@@ -291,9 +344,7 @@ class ListingService {
 
     final response = await ApiClient.get(
       Uri.parse(ApiConstants.favoriteCheck(listingId)),
-      headers: const {
-        'Accept': 'application/json',
-      },
+      headers: const {'Accept': 'application/json'},
     );
 
     final decoded = _decode(response);
@@ -327,18 +378,12 @@ class ListingService {
 
     final response = await ApiClient.post(
       Uri.parse(ApiConstants.favoriteByListing(listingId)),
-      headers: const {
-        'Accept': 'application/json',
-      },
+      headers: const {'Accept': 'application/json'},
     );
 
     final decoded = _decode(response);
 
-    _ensureSuccess(
-      response,
-      decoded,
-      fallback: 'Failed to save listing.',
-    );
+    _ensureSuccess(response, decoded, fallback: 'Failed to save listing.');
   }
 
   /// Remove a listing from the current user's favorites.
@@ -346,16 +391,12 @@ class ListingService {
     final accessToken = await AuthStorage.getAccessToken();
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception(
-        'You must be logged in to manage saved listings.',
-      );
+      throw Exception('You must be logged in to manage saved listings.');
     }
 
     final response = await ApiClient.delete(
       Uri.parse(ApiConstants.favoriteByListing(listingId)),
-      headers: const {
-        'Accept': 'application/json',
-      },
+      headers: const {'Accept': 'application/json'},
     );
 
     final decoded = _decode(response);
@@ -372,16 +413,12 @@ class ListingService {
     final accessToken = await AuthStorage.getAccessToken();
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception(
-        'You must be logged in to view saved listings.',
-      );
+      throw Exception('You must be logged in to view saved listings.');
     }
 
     final response = await ApiClient.get(
       Uri.parse(ApiConstants.favorites),
-      headers: const {
-        'Accept': 'application/json',
-      },
+      headers: const {'Accept': 'application/json'},
     );
 
     final decoded = _decode(response);
@@ -438,21 +475,14 @@ class ListingService {
   }) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       if (decoded is Map<String, dynamic>) {
-        throw Exception(
-          decoded['message']?.toString() ?? fallback,
-        );
+        throw Exception(decoded['message']?.toString() ?? fallback);
       }
 
-      throw Exception(
-        '$fallback Status: ${response.statusCode}.',
-      );
+      throw Exception('$fallback Status: ${response.statusCode}.');
     }
 
-    if (decoded is Map<String, dynamic> &&
-        decoded['success'] != true) {
-      throw Exception(
-        decoded['message']?.toString() ?? fallback,
-      );
+    if (decoded is Map<String, dynamic> && decoded['success'] != true) {
+      throw Exception(decoded['message']?.toString() ?? fallback);
     }
   }
 }

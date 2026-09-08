@@ -6,7 +6,9 @@ import '../../services/listing_service.dart';
 import '../../widgets/listings/listing_card.dart';
 
 class BrowseScreen extends StatefulWidget {
-  const BrowseScreen({super.key});
+  const BrowseScreen({super.key, this.initialSearch});
+
+  final String? initialSearch;
 
   @override
   State<BrowseScreen> createState() => _BrowseScreenState();
@@ -31,7 +33,31 @@ class _BrowseScreenState extends State<BrowseScreen> {
   @override
   void initState() {
     super.initState();
+
+    final initialSearch = widget.initialSearch?.trim();
+
+    if (initialSearch != null && initialSearch.isNotEmpty) {
+      _searchController.text = initialSearch;
+    }
+
     _loadListings();
+  }
+
+  @override
+  void didUpdateWidget(covariant BrowseScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final newSearch = widget.initialSearch?.trim() ?? '';
+    final oldSearch = oldWidget.initialSearch?.trim() ?? '';
+
+    if (newSearch != oldSearch && newSearch != _searchController.text) {
+      _searchController.text = newSearch;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _loadListings();
+      });
+    }
   }
 
   @override
@@ -264,7 +290,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                           },
                         ),
                         _FilterChoice(
-                          label: 'Severe',
+                          label: 'Major',
                           selected: severity == 'SEVERE',
                           onTap: () {
                             setSheetState(() {

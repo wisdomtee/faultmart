@@ -6,6 +6,7 @@ import 'home/home_screen.dart';
 import 'listings/browse_screen.dart';
 import 'listings/saved_screen.dart';
 import 'profile/account_screen.dart';
+import '../services/notification_manager.dart';
 import 'sell/sell_screen.dart';
 import 'support/about_screen.dart';
 import 'support/contact_support_screen.dart';
@@ -21,10 +22,28 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
+  String? _browseSearchQuery;
 
-  void _selectTab(int index) {
+  @override
+  void initState() {
+    super.initState();
+
+    NotificationManager.instance.start();
+  }
+
+  @override
+  void dispose() {
+    NotificationManager.instance.stop();
+    super.dispose();
+  }
+
+  void _selectTab(int index, {String? search}) {
     setState(() {
       _currentIndex = index;
+
+      if (index == 1 && search != null) {
+        _browseSearchQuery = search;
+      }
     });
   }
 
@@ -79,31 +98,21 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   void _pushPage(Widget page) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => page,
-      ),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 
   @override
   Widget build(BuildContext context) {
     final screens = [
-      HomeScreen(
-        onNavigate: _selectTab,
-        onFooterAction: _handleFooterAction,
-      ),
-      const BrowseScreen(),
+      HomeScreen(onNavigate: _selectTab, onFooterAction: _handleFooterAction),
+      BrowseScreen(initialSearch: _browseSearchQuery),
       const SellScreen(),
       const SavedScreen(),
       AccountScreen(onNavigate: _selectTab),
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _selectTab,
@@ -113,10 +122,7 @@ class _MainNavigationState extends State<MainNavigation> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(
-              Icons.home_rounded,
-              color: AppTheme.primaryRed,
-            ),
+            selectedIcon: Icon(Icons.home_rounded, color: AppTheme.primaryRed),
             label: 'Home',
           ),
           NavigationDestination(

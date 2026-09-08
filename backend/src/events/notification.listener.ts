@@ -28,14 +28,19 @@ eventEmitter.on(
 eventEmitter.on(
   AppEvent.MESSAGE_RECEIVED,
   async ({ userId, title, message, referenceId }) => {
-    await notificationService.createNotification(
-      userId,
-      title,
-      message,
-      NotificationType.NEW_MESSAGE,
-      referenceId,
-      "Message"
-    );
+    const notification =
+      await notificationService.createNotification(
+        userId,
+        title,
+        message,
+        NotificationType.NEW_MESSAGE,
+        referenceId,
+        "Message"
+      );
+
+    getSocketServer()
+      .to(`user:${userId}`)
+      .emit("notification", notification);
   }
 );
 

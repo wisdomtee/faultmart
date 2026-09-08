@@ -152,7 +152,12 @@ class HomeService {
 
             select: {
 
-              listings: true
+                listings: {
+                  where: {
+                    status: "ACTIVE",
+                    deletedAt: null,
+                  },
+                },
 
             }
 

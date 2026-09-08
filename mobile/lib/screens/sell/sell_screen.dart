@@ -8,6 +8,7 @@ import '../../models/listing.dart';
 import '../../services/ai_service.dart';
 import '../../services/listing_service.dart';
 import '../../services/category_service.dart';
+import '../../core/constants/nigerian_states.dart';
 
 class SellScreen extends StatefulWidget {
   const SellScreen({super.key});
@@ -41,18 +42,9 @@ class _SellScreenState extends State<SellScreen> {
   String _condition = 'FAULTY';
   String _faultSeverity = 'NONE';
 
-  /*
-   * Temporary category mapping.
-   *
-   * These IDs correspond to the categories currently
-   * available in the FaultMart backend.
-   *
-   * We will replace this with a real category API
-   * once the mobile category flow is implemented.
-   */
   List<ListingCategory> _categories = [];
-bool _isLoadingCategories = true;
-String? _categoryError;
+  bool _isLoadingCategories = true;
+  String? _categoryError;
 
   @override
   void dispose() {
@@ -103,32 +95,32 @@ String? _categoryError;
     });
   }
 
-Future<void> _loadCategories() async {
-  try {
-    final categories = await CategoryService.getCategories();
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await CategoryService.getCategories();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _categories = categories;
-      _isLoadingCategories = false;
-      _categoryError = null;
-    });
-  } catch (error) {
-    if (!mounted) return;
+      setState(() {
+        _categories = categories;
+        _isLoadingCategories = false;
+        _categoryError = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
 
-    setState(() {
-      _isLoadingCategories = false;
-      _categoryError = error.toString();
-    });
+      setState(() {
+        _isLoadingCategories = false;
+        _categoryError = error.toString();
+      });
+    }
   }
-}
 
-@override
-void initState() {
-  super.initState();
-  _loadCategories();
-}
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
 
   String? _selectedCategoryName() {
     for (final category in _categories) {
@@ -417,45 +409,43 @@ void initState() {
               const SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
-  initialValue: _categoryId,
-  decoration: _inputDecoration(
-    label: 'Category',
-  ).copyWith(
-    helperText: _isLoadingCategories
-        ? 'Loading categories...'
-        : _categoryError,
-    helperStyle: _categoryError != null
-        ? const TextStyle(color: Colors.red)
-        : null,
-  ),
-  hint: Text(
-    _isLoadingCategories
-        ? 'Loading categories...'
-        : 'Select a category',
-  ),
-  items: _categories
-      .map(
-        (category) => DropdownMenuItem<String>(
-          value: category.id,
-          child: Text(category.name),
-        ),
-      )
-      .toList(),
-  onChanged: _isLoadingCategories
-      ? null
-      : (value) {
-          setState(() {
-            _categoryId = value;
-          });
-        },
-  validator: (value) {
-    if (value == null || value.isEmpty) {
-      return 'Select a category.';
-    }
+                initialValue: _categoryId,
+                decoration: _inputDecoration(label: 'Category').copyWith(
+                  helperText: _isLoadingCategories
+                      ? 'Loading categories...'
+                      : _categoryError,
+                  helperStyle: _categoryError != null
+                      ? const TextStyle(color: Colors.red)
+                      : null,
+                ),
+                hint: Text(
+                  _isLoadingCategories
+                      ? 'Loading categories...'
+                      : 'Select a category',
+                ),
+                items: _categories
+                    .map(
+                      (category) => DropdownMenuItem<String>(
+                        value: category.id,
+                        child: Text(category.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _isLoadingCategories
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _categoryId = value;
+                        });
+                      },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Select a category.';
+                  }
 
-    return null;
-  },
-),
+                  return null;
+                },
+              ),
 
               const SizedBox(height: 16),
 
@@ -590,15 +580,29 @@ void initState() {
 
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _stateController,
-                decoration: _inputDecoration(
-                  label: 'State',
-                  hint: 'e.g. Lagos',
-                ),
+              DropdownButtonFormField<String>(
+                initialValue: _stateController.text.isEmpty
+                    ? null
+                    : _stateController.text,
+                decoration: _inputDecoration(label: 'State'),
+                items: NigerianStates.all
+                    .map(
+                      (state) => DropdownMenuItem<String>(
+                        value: state,
+                        child: Text(state),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+
+                  setState(() {
+                    _stateController.text = value;
+                  });
+                },
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Enter the state.';
+                  if (value == null || value.isEmpty) {
+                    return 'Select the state.';
                   }
 
                   return null;

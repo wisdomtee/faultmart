@@ -3,7 +3,14 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({super.key});
+  const HomeHeader({
+    super.key,
+    required this.onNotifications,
+    required this.onAccount,
+  });
+
+  final VoidCallback onNotifications;
+  final VoidCallback onAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +59,17 @@ class HomeHeader extends StatelessWidget {
               ],
             ),
           ),
-          _HeaderIcon(icon: Icons.notifications_none_rounded, onTap: () {}),
+          _HeaderIcon(
+            icon: Icons.notifications_none_rounded,
+            tooltip: 'Notifications',
+            onTap: onNotifications,
+          ),
           const SizedBox(width: 4),
-          _HeaderIcon(icon: Icons.person_outline_rounded, onTap: () {}),
+          _HeaderIcon(
+            icon: Icons.person_outline_rounded,
+            tooltip: 'Account',
+            onTap: onAccount,
+          ),
         ],
       ),
     );
@@ -62,16 +77,21 @@ class HomeHeader extends StatelessWidget {
 }
 
 class _HeaderIcon extends StatelessWidget {
-  const _HeaderIcon({required this.icon, required this.onTap});
+  const _HeaderIcon({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
 
   final IconData icon;
+  final String tooltip;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: onTap,
-      tooltip: 'Open',
+      tooltip: tooltip,
       icon: Icon(icon, size: 24, color: AppTheme.darkText),
     );
   }
